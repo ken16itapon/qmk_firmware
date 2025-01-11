@@ -7,7 +7,7 @@
 A split keyboard with 3x6 vertically staggered keys and 3 thumb keys.
 Also, it has the option that use extension keys and rotary encoders.
 
-Keyboard Maintainer: [foostan](https://github.com/foostan/) [@foostan](https://twitter.com/foostan)  
+Keyboard Maintainer: [foostan](https://github.com/foostan/) [@foostan](https://twitter.com/foostan)r  
 Hardware Supported: Corne PCB
 Hardware Availability: [PCB & Case Data](https://github.com/foostan/crkbd)
 
@@ -42,8 +42,6 @@ RGB_MATRIX_ENABLE = yes
 ```
 
 And in your `config.h` file, add the following:
-
-```c
 
 #ifdef RGB_MATRIX_ENABLE
 #   define RGB_MATRIX_KEYPRESSES // reacts to keypresses
