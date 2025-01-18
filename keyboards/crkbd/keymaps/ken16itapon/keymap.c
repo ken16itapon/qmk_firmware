@@ -173,10 +173,10 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 #endif
 
 void matrix_init_user(void) {
-  // “ã“®
+  // è–™åˆ€å¼
 
   set_naginata(_NAGINATA);
-  // “ã“®
+  // è–™åˆ€å¼
 }
 
 
@@ -190,13 +190,13 @@ static uint16_t mhenkan_pressed_time = 0;
 static bool lower_pressed = false;
 static uint16_t lower_pressed_time = 0;
 static bool bspc_active = false;
-static bool backspace_sent = false;  // Å‰‚ÌBSPC‚ª‘—M‚³‚ê‚½‚©‚Ç‚¤‚©‚ğ’ÇÕ
-static bool other_key_pressed = false;  // ’Ç‰Á
+static bool backspace_sent = false;  // æœ€åˆã®BSPCãŒé€ä¿¡ã•ã‚ŒãŸã‹ã©ã†ã‹ã‚’è¿½è·¡
+static bool other_key_pressed = false;  // è¿½åŠ 
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (record->event.pressed && !lower_pressed) {
     if (keycode != LOWER) {
-        other_key_pressed = true;  // ‘¼‚ÌƒL[‚ª‰Ÿ‚³‚ê‚½
+        other_key_pressed = true;  // ä»–ã®ã‚­ãƒ¼ãŒæŠ¼ã•ã‚ŒãŸ
     }
   }
   switch (keycode) {
@@ -204,7 +204,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       if (record->event.pressed) {
             lower_pressed = true;
             lower_pressed_time = record->event.time;
-            other_key_pressed = false;  // ‘¼‚ÌƒL[‰Ÿ‰ºƒtƒ‰ƒO‚Ì‚İƒŠƒZƒbƒg
+            other_key_pressed = false;  // ä»–ã®ã‚­ãƒ¼æŠ¼ä¸‹ãƒ•ãƒ©ã‚°ã®ã¿ãƒªã‚»ãƒƒãƒˆ
 
         layer_on(_LOWER);
         update_tri_layer(_LOWER, _RAISE, _ADJUST);
@@ -212,16 +212,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         layer_off(_LOWER);
         update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
-        // ’Z‰Ÿ‚µ‚Ìê‡‚ÍBSPC‚ğ1‰ñ“ü—Íi‘¼‚ÌƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚È‚¢ê‡‚Ì‚İj
+        // çŸ­æŠ¼ã—ã®å ´åˆã¯BSPCã‚’1å›å…¥åŠ›ï¼ˆä»–ã®ã‚­ãƒ¼ãŒæŠ¼ã•ã‚Œã¦ã„ãªã„å ´åˆã®ã¿ï¼‰
         if (lower_pressed && !other_key_pressed &&
             (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
           register_code(KC_BSPC);
           unregister_code(KC_BSPC);
-          backspace_sent = true;  // ‚±‚±‚Åtrue‚É‚·‚é
+          backspace_sent = true;  // ã“ã“ã§trueã«ã™ã‚‹
         } else {
-            backspace_sent = false;  // ‘¼‚ÌƒL[‚ª‰Ÿ‚³‚ê‚½ê‡‚Ífalse‚É‚·‚é
+            backspace_sent = false;  // ä»–ã®ã‚­ãƒ¼ãŒæŠ¼ã•ã‚ŒãŸå ´åˆã¯falseã«ã™ã‚‹
         }
-        // ƒŠƒs[ƒg’†‚Ìê‡‚ÍBSPC‚ğ‰ğœ
+        // ãƒªãƒ”ãƒ¼ãƒˆä¸­ã®å ´åˆã¯BSPCã‚’è§£é™¤
         if (bspc_active) {
           unregister_code(KC_BSPC);
           bspc_active = false;
@@ -324,18 +324,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (!twpair_on_jis(keycode, record))
     return false;
 
-// “ã“®
+// è–™åˆ€å¼
   if (!process_naginata(keycode, record))
     return true;
-// “ã“®
+// è–™åˆ€å¼
 
   return true;
 
 }
 
-// matrix_scan_userŠÖ”“à
+// matrix_scan_useré–¢æ•°å†…
 void matrix_scan_user(void) {
-  // Šù‚Éˆê“xBSPC‚ª‘—M‚³‚ê‚Ä‚¢‚ÄA‚©‚ÂTAPPING_TERM‚ğ’´‚¦‚Ä‰Ÿ‚³‚ê‚Ä‚¢‚éê‡‚ÉƒŠƒs[ƒgŠJn
+  // æ—¢ã«ä¸€åº¦BSPCãŒé€ä¿¡ã•ã‚Œã¦ã„ã¦ã€ã‹ã¤TAPPING_TERMã‚’è¶…ãˆã¦æŠ¼ã•ã‚Œã¦ã„ã‚‹å ´åˆã«ãƒªãƒ”ãƒ¼ãƒˆé–‹å§‹
   if (lower_pressed && backspace_sent && !bspc_active &&
       !other_key_pressed && (timer_elapsed(lower_pressed_time) >= TAPPING_TERM)) {
     register_code(KC_BSPC);
@@ -343,12 +343,12 @@ void matrix_scan_user(void) {
   }
 }
 
-// HIDƒŒƒ|[ƒg‚Ìƒnƒ“ƒhƒŠƒ“ƒO
+// HIDãƒ¬ãƒãƒ¼ãƒˆã®ãƒãƒ³ãƒ‰ãƒªãƒ³ã‚°
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     if (length < 1) return;
 
     switch(data[0]) {
-        case 0x01:  // IMEó‘ÔXV
+        case 0x01:  // IMEçŠ¶æ…‹æ›´æ–°
             if (data[1]) {
                 naginata_on();
             } else {
