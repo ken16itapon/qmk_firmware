@@ -21,9 +21,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "naginata.h"
 #include "twpair_on_jis.h"
 #include "raw_hid.h"
+#include "process_tap_dance.h"
 
 NGKEYS naginata_keys;
 
+// タップダンスのインデックス定義
+enum {
+    TD_CSTAB = 0,
+};
 
 // Defines names for use in layer keycodes and the keymap
 enum layer_names {
@@ -48,7 +53,7 @@ enum custom_keycodes {
 
 #define S_ENTER SFT_T(KC_ENT)
 #define C_SPACE CTL_T(KC_SPACE)
-#define CS_TAB  RCS_T(KC_TAB)
+#define CS_TAB  TD(TD_CSTAB)  // 既存のCS_TABマクロを上書き
 #define C_BSPC  CTL_T(KC_BSPC)
 #define S_ESC   SFT_T(KC_ESC)
 #define COPILOT LSG(KC_F23)
@@ -194,153 +199,151 @@ static bool backspace_sent = false;  // 最初のBSPCが送信されたかどう
 static bool other_key_pressed = false;  // 追加
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed && !lower_pressed) {
-    if (keycode != LOWER) {
-        other_key_pressed = true;  // 他のキーが押された
+    if (record->event.pressed &&  (keycode != LOWER)) {
+        other_key_pressed = true;
     }
-  }
-  switch (keycode) {
-    case LOWER:
-      if (record->event.pressed) {
-            lower_pressed = true;
-            lower_pressed_time = record->event.time;
-            other_key_pressed = false;  // 他のキー押下フラグのみリセット
+    switch (keycode) {
+        case LOWER:
+            if (record->event.pressed) {
+                lower_pressed = true;
+                lower_pressed_time = record->event.time;
+                // LOWERを押したタイミングでリセット
+                other_key_pressed = false;
 
-        layer_on(_LOWER);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      } else {
-        layer_off(_LOWER);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                layer_on(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
-        // 短押しの場合はBSPCを1回入力（他のキーが押されていない場合のみ）
-        if (lower_pressed && !other_key_pressed &&
-            (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
-          register_code(KC_BSPC);
-          unregister_code(KC_BSPC);
-          backspace_sent = true;  // ここでtrueにする
-        } else {
-            backspace_sent = false;  // 他のキーが押された場合はfalseにする
-        }
-        // リピート中の場合はBSPCを解除
-        if (bspc_active) {
-          unregister_code(KC_BSPC);
-          bspc_active = false;
-        }
-        lower_pressed = false;
-      }
-      return false;
-      break;
+            } else {
+                layer_off(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
-    case RAISE:
-      if (record->event.pressed) {
-        raise_pressed = true;
-        raise_pressed_time = record->event.time;
+                if (lower_pressed && !bspc_active && !other_key_pressed &&
+                    (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
+                    register_code(KC_BSPC);
+                    unregister_code(KC_BSPC);
+                    backspace_sent = true;
+                } else {
+                    // Do nothing if the key was held for too long
+                    backspace_sent = false;
+                }
 
-        layer_on(_RAISE);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      } else {
-        layer_off(_RAISE);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                if (bspc_active) {
+                    unregister_code(KC_BSPC);
+                    bspc_active = false;
+                    backspace_sent = false;
+                }
 
-        if (raise_pressed && (TIMER_DIFF_16(record->event.time, raise_pressed_time) < TAPPING_TERM)) {
-          register_code(KC_SPC);
-          unregister_code(KC_SPC);
-        }
-        raise_pressed = false;
-      }
-      return false;
-      break;
+                lower_pressed = false;
 
-    case ADJUST:
-      if (record->event.pressed) {
-        layer_on(_ADJUST);
-      } else {
-        layer_off(_ADJUST);
-      }
-      return false;
-      break;
+            }
+            return false;
+            break;
 
-    case MHENKAN:
-      if (record->event.pressed) {
-        mhenkan_pressed = true;
-        mhenkan_pressed_time = record->event.time;
+        case RAISE:
+            if (record->event.pressed) {
+                raise_pressed = true;
+                raise_pressed_time = record->event.time;
 
-      } else {
-        if (mhenkan_pressed && (TIMER_DIFF_16(record->event.time, mhenkan_pressed_time) < TAPPING_TERM)) {
-          tap_code(KC_LANGUAGE_2); // Mac
-          tap_code(KC_INTERNATIONAL_5); // Win
+                layer_on(_RAISE);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+            } else {
+                layer_off(_RAISE);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
-          naginata_off();
-        }
-        mhenkan_pressed = false;
-      }
-      return true;
-      break;
+                if (raise_pressed && (TIMER_DIFF_16(record->event.time, raise_pressed_time) < TAPPING_TERM)) {
+                    register_code(KC_SPC);
+                    unregister_code(KC_SPC);
+                }
+                raise_pressed = false;
+            }
+            return false;
+            break;
 
-    case HENKAN:
-      if (record->event.pressed) {
-        henkan_pressed = true;
-        henkan_pressed_time = record->event.time;
-      } else {
-          if (henkan_pressed && (TIMER_DIFF_16(record->event.time, henkan_pressed_time) < TAPPING_TERM)) {
-            tap_code(KC_LANGUAGE_1); // Mac
-            tap_code(KC_INTERNATIONAL_4); // Win
+        case ADJUST:
+            if (record->event.pressed) {
+                layer_on(_ADJUST);
+            } else {
+                layer_off(_ADJUST);
+            }
+            return false;
+            break;
 
-            naginata_on();
-            henkan_pressed = false;
-          } else {
-          // Do nothing if the key was held for too long
-            henkan_pressed = false;
-          }
-      }
-      return true;
-      break;
+        case MHENKAN:
+            if (record->event.pressed) {
+                mhenkan_pressed = true;
+                mhenkan_pressed_time = record->event.time;
 
-    default:
-      if (record->event.pressed) {
-          // reset the flags
-        lower_pressed = false;
-        raise_pressed = false;
+            } else {
+                if (mhenkan_pressed && (TIMER_DIFF_16(record->event.time, mhenkan_pressed_time) < TAPPING_TERM)) {
+                    tap_code(KC_LANGUAGE_2); // Mac
+                    tap_code(KC_INTERNATIONAL_5); // Win
 
-        if (henkan_pressed) {
-          register_code(keycode);
-          register_code(KC_LGUI);
-          unregister_code(KC_LGUI);
-          unregister_code(keycode);
-          henkan_pressed = false;
-          return true;
-        } else if (mhenkan_pressed) {
-          register_code(KC_LALT);
-          register_code(keycode);
-          unregister_code(keycode);
-          unregister_code(KC_LALT);
-          mhenkan_pressed = false;
-          return true;
-        }
-      }
-      break;
-  }
+                    naginata_off();
+                }
+                mhenkan_pressed = false;
+            }
+            return true;
+            break;
 
-  if (!twpair_on_jis(keycode, record))
-    return false;
+        case HENKAN:
+            if (record->event.pressed) {
+                henkan_pressed = true;
+                henkan_pressed_time = record->event.time;
+            } else {
+                if (henkan_pressed && (TIMER_DIFF_16(record->event.time, henkan_pressed_time) < TAPPING_TERM)) {
+                    tap_code(KC_LANGUAGE_1); // Mac
+                    tap_code(KC_INTERNATIONAL_4); // Win
 
-// 薙刀式
-  if (!process_naginata(keycode, record))
+                    naginata_on();
+                    henkan_pressed = false;
+                } else {
+                    // Do nothing if the key was held for too long
+                    henkan_pressed = false;
+                }
+            }
+            return true;
+            break;
+
+        default:
+            if (henkan_pressed) {
+                register_code(keycode);
+                register_code(KC_LGUI);
+                unregister_code(KC_LGUI);
+                unregister_code(keycode);
+                henkan_pressed = false;
+                return true;
+            } else if (mhenkan_pressed) {
+                register_code(KC_LALT);
+                register_code(keycode);
+                unregister_code(keycode);
+                unregister_code(KC_LALT);
+                mhenkan_pressed = false;
+                return true;
+            }
+    }
+
+
+
+    if (!twpair_on_jis(keycode, record))
+        return false;
+
+    // 薙刀式
+    if (!process_naginata(keycode, record))
+        return true;
+    // 薙刀式
+
     return true;
-// 薙刀式
-
-  return true;
 
 }
 
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
-  // 既に一度BSPCが送信されていて、かつTAPPING_TERMを超えて押されている場合にリピート開始
-  if (lower_pressed && backspace_sent && !bspc_active &&
-      !other_key_pressed && (timer_elapsed(lower_pressed_time) >= TAPPING_TERM)) {
-    register_code(KC_BSPC);
-    bspc_active = true;
-  }
+    // 既に一度BSPCが送信されていて、かつTAPPING_TERMを超えて押されている場合にリピート開始
+    if (lower_pressed && backspace_sent && !bspc_active &&
+        !other_key_pressed && (timer_elapsed(lower_pressed_time) >= TAPPING_TERM)) {
+        register_code(KC_BSPC);
+        bspc_active = true;
+    }
 }
 
 // HIDレポートのハンドリング
@@ -356,4 +359,91 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
             }
             break;
     }
+}
+
+// 状態管理用の静的変数を追加
+static bool mods_active = false;
+
+// タップダンス終了時の処理
+void cstab_finished(tap_dance_state_t *state, void *user_data) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) {
+            // 単体タップ: TAB
+            register_code(KC_TAB);
+        } else {
+            // 他のキーと同時押し: CTRL+SHIFT
+            mods_active = true;
+            register_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+        }
+    } else if (state->count == 2) {
+        // ダブルタップ: ESC
+        register_code(KC_ESC);
+    }
+}
+
+// タップダンスリセット時の処理
+void cstab_reset(tap_dance_state_t *state, void *user_data) {
+    if (state->count == 1) {
+        if (state->interrupted || !state->pressed) {
+            unregister_code(KC_TAB);
+        } else if (mods_active) {
+            unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+            mods_active = false;
+        }
+    } else if (state->count == 2) {
+        unregister_code(KC_ESC);
+    }
+    // 安全のため、必ず修飾キーをクリア
+    if (mods_active) {
+        unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+        mods_active = false;
+    }
+}
+
+// タップダンス配列の定義
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_CSTAB] = {
+        .fn = {
+            NULL,
+            cstab_finished,
+            cstab_reset,
+        }
+    },
+};
+
+void keyboard_post_init_user(void) {
+    rgb_matrix_enable();
+    rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_sethsv(HSV_GREEN);
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    switch (get_highest_layer(state)) {
+        case _BASE:
+            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+            rgb_matrix_sethsv(HSV_GREEN);    // 基本: 緑
+            break;
+        case _NAGINATA:
+            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+            rgb_matrix_sethsv(HSV_ORANGE);   // 薙刀式: オレンジ
+            break;
+        case _10KEY:
+            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+            rgb_matrix_sethsv(HSV_BLUE);     // テンキー: 青
+            break;
+        case _LOWER:
+            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+            rgb_matrix_sethsv(HSV_PURPLE);   // LOWER: 紫
+            break;
+        case _RAISE:
+            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+            rgb_matrix_sethsv(HSV_RED);      // RAISE: 赤
+            break;
+        case _ADJUST:
+            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+            rgb_matrix_sethsv(HSV_YELLOW);      // RAISE: 黄
+            break;
+
+    }
+    return state;
 }
