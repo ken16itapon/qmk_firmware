@@ -194,20 +194,22 @@ static uint16_t mhenkan_pressed_time = 0;
 
 static bool lower_pressed = false;
 static uint16_t lower_pressed_time = 0;
+static uint16_t lower_released_time = 0;
 static bool bspc_active = false;
-static bool backspace_sent = false;  // 最初のBSPCが送信されたかどうかを追跡
-static bool other_key_pressed = false;  // 追加
-static bool during_lower_press = false;  // LOWER押下中かどうかのフラグを追加
-static bool tapping_term_expired = false;  // TAPPING_TERM経過フラグを追加
+static bool backspace_sent = false;
+static bool other_key_pressed = false;
+static bool tapping_term_expired = false;
+
+static layer_state_t prev_state = 0;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed && (keycode != LOWER)) {
-        if (during_lower_press) {
-            other_key_pressed = true;
-        }
+    // 他のキー押下検出
+    if (record->event.pressed && keycode != LOWER) {
+        other_key_pressed = true;
+        backspace_sent = false;
     }
 
-        // TAPPING_TERM経過チェック
+    // TAPPING_TERM経過チェック
     if (lower_pressed && !tapping_term_expired &&
         (TIMER_DIFF_16(record->event.time, lower_pressed_time) >= TAPPING_TERM)) {
         tapping_term_expired = true;
@@ -216,28 +218,24 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case LOWER:
             if (record->event.pressed) {
-                other_key_pressed = false;
-                during_lower_press = true;  // LOWER押下中フラグを立てる
                 lower_pressed = true;
                 lower_pressed_time = record->event.time;
-                tapping_term_expired = false;  // フラグリセット
+                tapping_term_expired = false;
+                other_key_pressed = false;
 
                 layer_on(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
-
             } else {
-                during_lower_press = false;  // LOWER押下中フラグを下ろす
                 layer_off(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
-                if (lower_pressed && !bspc_active && !other_key_pressed && !tapping_term_expired &&
-                    (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
-                    register_code(KC_BSPC);
-                    unregister_code(KC_BSPC);
-                    backspace_sent = true;
-                } else {
-                    // Do nothing if the key was held for too long
-                    backspace_sent = false;
+                // 単打判定とBSPC送信
+                if (!bspc_active && !other_key_pressed && (!tapping_term_expired ||
+                    (TIMER_DIFF_16(record->event.time, lower_released_time) < TAPPING_TERM)) &&
+                    (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM))  {
+                        register_code(KC_BSPC);
+                        unregister_code(KC_BSPC);
+                        backspace_sent = true;
                 }
 
                 if (bspc_active) {
@@ -247,7 +245,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
 
                 lower_pressed = false;
-
+                lower_released_time = record->event.time;
             }
             return false;
             break;
@@ -337,15 +335,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 
 
+    // 薙刀式とその他の処理
     if (!twpair_on_jis(keycode, record))
         return false;
-
-    // 薙刀式
     if (!process_naginata(keycode, record))
         return true;
-    // 薙刀式
 
     return true;
+
 
 }
 
@@ -431,32 +428,39 @@ void keyboard_post_init_user(void) {
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
-    switch (get_highest_layer(state)) {
-        case _BASE:
-            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-            rgb_matrix_sethsv(HSV_GREEN);    // 基本: 緑
-            break;
-        case _NAGINATA:
-            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-            rgb_matrix_sethsv(HSV_ORANGE);   // 薙刀式: オレンジ
-            break;
-        case _10KEY:
-            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-            rgb_matrix_sethsv(HSV_BLUE);     // テンキー: 青
-            break;
-        case _LOWER:
-            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-            rgb_matrix_sethsv(HSV_PURPLE);   // LOWER: 紫
-            break;
-        case _RAISE:
-            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-            rgb_matrix_sethsv(HSV_RED);      // RAISE: 赤
-            break;
-        case _ADJUST:
-            rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-            rgb_matrix_sethsv(HSV_YELLOW);      // RAISE: 黄
-            break;
+    uint8_t current_layer = get_highest_layer(state);
+    uint8_t prev_layer = get_highest_layer(prev_state);
 
+    // レイヤー移動を検出
+    if (current_layer != prev_layer) {
+        // _LOWERへの移動
+        if (current_layer == _LOWER) {
+            // bspc_active = false;
+            // backspace_sent = false;
+            // tapping_term_expired = false;
+        // _LOWERからの移動
+        } else if (prev_layer == _LOWER) {
+            // フラグを保持したまま
+
+        // _LOWERが関係しない移動
+        } else {
+            bspc_active = false;
+            backspace_sent = false;
+            other_key_pressed = false;
+            // tapping_term_expired = false;
+        }
+    }
+
+    prev_state = state;
+
+    // LED色の設定
+    switch (current_layer) {
+        case _BASE:     rgb_matrix_sethsv(HSV_GREEN);   break;
+        case _NAGINATA: rgb_matrix_sethsv(HSV_ORANGE); break;
+        case _10KEY:    rgb_matrix_sethsv(HSV_BLUE);   break;
+        case _LOWER:    rgb_matrix_sethsv(HSV_PURPLE); break;
+        case _RAISE:    rgb_matrix_sethsv(HSV_RED);    break;
+        case _ADJUST:   rgb_matrix_sethsv(HSV_YELLOW); break;
     }
     return state;
 }
