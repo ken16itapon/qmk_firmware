@@ -155,53 +155,151 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 };
 #endif
 
+void matrix_init_user(void) {
+  // ???
+
+  set_naginata(_NAGINATA);
+  // ???
+}
+
+static bool raise_pressed = false;
+static uint16_t raise_pressed_time = 0;
+static bool henkan_pressed = false;
+static uint16_t henkan_pressed_time = 0;
+static bool mhenkan_pressed = false;
+static uint16_t mhenkan_pressed_time = 0;
+
+static bool lower_pressed = false;
+static uint16_t lower_pressed_time = 0;
+static bool bspc_active = false;
+static bool backspace_sent = false;  // ???BSPC?????????????
+static bool other_key_pressed = false;  // ??
+
 layer_state_t layer_state_set_user(layer_state_t state) {
   return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  switch (keycode) {
-    case EISU:
-      if (record->event.pressed) {
-        if (is_mac_mode()) {
-          register_code(KC_LNG2);
-        }else{
-          tap_code16(LALT(KC_GRAVE));
-        }
-      } else {
-        unregister_code(KC_LNG2);
-      }
-      return false;
-      break;
-    case KANA:
-      if (record->event.pressed) {
-        if (is_mac_mode()) {
-          register_code(KC_LNG1);
-        }else{
-          tap_code16(LALT(KC_GRAVE));
-        }
-      } else {
-        unregister_code(KC_LNG1);
-      }
-      return false;
-      break;
-    case ADJUST:
-      if (record->event.pressed) {
-        layer_on(_LOWER);
-        layer_on(_RAISE);
-      } else {
-        layer_off(_LOWER);
-        layer_off(_RAISE);
-      }
-      break;
-    case RGBRST:
-      #ifdef RGBLIGHT_ENABLE
-        if (record->event.pressed) {
-          eeconfig_update_rgblight_default();
-          rgblight_enable();
-        }
-      #endif
-      break;
-  }
-  return true;
+    if (record->event.pressed &&  (keycode != LOWER)) {
+        other_key_pressed = true;
+    }
+    switch (keycode) {
+        case LOWER:
+            if (record->event.pressed) {
+                lower_pressed = true;
+                lower_pressed_time = record->event.time;
+                // LOWER??????????????
+                other_key_pressed = false;
+
+                layer_on(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+
+            } else {
+                layer_off(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+
+                if (lower_pressed && !bspc_active && !other_key_pressed &&
+                    (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
+                    register_code(KC_BSPC);
+                    unregister_code(KC_BSPC);
+                    backspace_sent = true;
+                } else {
+                    // Do nothing if the key was held for too long
+                    backspace_sent = false;
+                }
+
+                if (bspc_active) {
+                    unregister_code(KC_BSPC);
+                    bspc_active = false;
+                    backspace_sent = false;
+                }
+
+                lower_pressed = false;
+
+            }
+            return false;
+            break;
+
+        case RAISE:
+            if (record->event.pressed) {
+                raise_pressed = true;
+                raise_pressed_time = record->event.time;
+
+                layer_on(_RAISE);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+            } else {
+                layer_off(_RAISE);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+
+                if (raise_pressed && (TIMER_DIFF_16(record->event.time, raise_pressed_time) < TAPPING_TERM)) {
+                    register_code(KC_SPC);
+                    unregister_code(KC_SPC);
+                }
+                raise_pressed = false;
+            }
+            return false;
+            break;
+
+        case ADJUST:
+            if (record->event.pressed) {
+                layer_on(_ADJUST);
+            } else {
+                layer_off(_ADJUST);
+            }
+            return false;
+            break;
+
+        case MHENKAN:
+            if (record->event.pressed) {
+                mhenkan_pressed = true;
+                mhenkan_pressed_time = record->event.time;
+
+            } else {
+                if (mhenkan_pressed && (TIMER_DIFF_16(record->event.time, mhenkan_pressed_time) < TAPPING_TERM)) {
+                    tap_code(KC_LANGUAGE_2); // Mac
+                    tap_code(KC_INTERNATIONAL_5); // Win
+
+                    naginata_off();
+                }
+                mhenkan_pressed = false;
+            }
+            return true;
+            break;
+
+        case HENKAN:
+            if (record->event.pressed) {
+                henkan_pressed = true;
+                henkan_pressed_time = record->event.time;
+            } else {
+                if (henkan_pressed && (TIMER_DIFF_16(record->event.time, henkan_pressed_time) < TAPPING_TERM)) {
+                    tap_code(KC_LANGUAGE_1); // Mac
+                    tap_code(KC_INTERNATIONAL_4); // Win
+
+                    naginata_on();
+                    henkan_pressed = false;
+                } else {
+                    // Do nothing if the key was held for too long
+                    henkan_pressed = false;
+                }
+            }
+            return true;
+            break;
+
+        default:
+            if (henkan_pressed) {
+                register_code(keycode);
+                register_code(KC_LGUI);
+                unregister_code(KC_LGUI);
+                unregister_code(keycode);
+                henkan_pressed = false;
+                return true;
+            } else if (mhenkan_pressed) {
+                register_code(KC_LALT);
+                register_code(keycode);
+                unregister_code(keycode);
+                unregister_code(KC_LALT);
+                mhenkan_pressed = false;
+                return true;
+            }
+    }
 }

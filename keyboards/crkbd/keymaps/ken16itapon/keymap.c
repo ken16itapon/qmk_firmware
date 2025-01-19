@@ -197,27 +197,40 @@ static uint16_t lower_pressed_time = 0;
 static bool bspc_active = false;
 static bool backspace_sent = false;  // 最初のBSPCが送信されたかどうかを追跡
 static bool other_key_pressed = false;  // 追加
+static bool during_lower_press = false;  // LOWER押下中かどうかのフラグを追加
+static bool tapping_term_expired = false;  // TAPPING_TERM経過フラグを追加
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed &&  (keycode != LOWER)) {
-        other_key_pressed = true;
+    if (record->event.pressed && (keycode != LOWER)) {
+        if (during_lower_press) {
+            other_key_pressed = true;
+        }
     }
+
+        // TAPPING_TERM経過チェック
+    if (lower_pressed && !tapping_term_expired &&
+        (TIMER_DIFF_16(record->event.time, lower_pressed_time) >= TAPPING_TERM)) {
+        tapping_term_expired = true;
+    }
+
     switch (keycode) {
         case LOWER:
             if (record->event.pressed) {
+                other_key_pressed = false;
+                during_lower_press = true;  // LOWER押下中フラグを立てる
                 lower_pressed = true;
                 lower_pressed_time = record->event.time;
-                // LOWERを押したタイミングでリセット
-                other_key_pressed = false;
+                tapping_term_expired = false;  // フラグリセット
 
                 layer_on(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
             } else {
+                during_lower_press = false;  // LOWER押下中フラグを下ろす
                 layer_off(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
 
-                if (lower_pressed && !bspc_active && !other_key_pressed &&
+                if (lower_pressed && !bspc_active && !other_key_pressed && !tapping_term_expired &&
                     (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
                     register_code(KC_BSPC);
                     unregister_code(KC_BSPC);
