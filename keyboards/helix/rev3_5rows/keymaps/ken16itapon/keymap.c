@@ -29,7 +29,7 @@ enum layer_names {
   _LOWER,
   _RAISE,
   _ADJUST,
-  _10KEY//,
+  _10KEY //,
 //   _COLEMAK,
 //   _QWERTY
 };
@@ -59,23 +59,37 @@ enum custom_keycodes {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [_COLEMAK] = LAYOUT(
  // ,-----------------------------------------------------.                 ,-----------------------------------------------------.
-       KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,
+       KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9, KC_BSPC,  KC_DEL,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-       KC_GRV,    KC_1,    KC_W,    KC_F,    KC_P,    KC_G,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
+       KC_GRV,    KC_1,    KC_W,    KC_F,    KC_P,    KC_G,                      KC_J,    KC_L,    KC_U,    KC_Y,    KC_0, KC_MINS,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-       CS_TAB,    KC_Q,    KC_R,    KC_S,    KC_T,    KC_D,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
+       CS_TAB,    KC_Q,    KC_R,    KC_S,    KC_T,    KC_D,                      KC_H,    KC_N,    KC_E,    KC_I, KC_SCLN,  KC_EQL,
  // |--------+--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+--------+--------|
-       C_BSPC,    KC_A,    KC_X,    KC_C,    KC_V,    KC_B, COPILOT,  TENKEY,    KC_K,    KC_M,  C_COMM,  KC_DOT, KC_SLSH,  KC_ENT,
+       C_BSPC,    KC_A,    KC_X,    KC_C,    KC_V,    KC_B, COPILOT,  TENKEY,    KC_K,    KC_M,  C_COMM,  KC_DOT,    KC_O, KC_QUOT,
  // |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-     KC_LSHFT,    KC_Z, KC_LALT, KC_LGUI,    EISU,   LOWER, KC_BSPC,    R_ENT,   RAISE,G(KANA), KC_RGUI, KC_RALT, KC_BSLS, KC_RGHT
+     KC_LSHFT,    KC_Z, KC_LALT, KC_LGUI, MHENKAN,   LOWER,   C_SPC,   S_ENT,   RAISE,  HENKAN, KC_RGUI, KC_RALT, KC_SLSH, KC_BSLS
+ // `-----------------------------------------------------------------------------------------------------------------------------'
+   ),
+
+  [_NAGINATA] = LAYOUT(
+ // ,-----------------------------------------------------.                 ,-----------------------------------------------------.
+      _______, _______,    NG_2,    NG_3,    NG_4,    NG_5,                      NG_6,    NG_7,    NG_8,    NG_9, _______, _______,
+ // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
+      _______,    NG_1,    NG_W,    NG_E,    NG_R,    NG_T,                      NG_Y,    NG_U,    NG_I,    NG_0,    NG_0, _______,
+ // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
+      _______,    NG_Q,    NG_S,    NG_D,    NG_F,    NG_G,                      NG_H,    NG_J,    NG_K,    NG_L, NG_SCLN,   NG_X1,
+ // |--------+--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+--------+--------|
+      _______,    NG_A,    NG_X,    NG_C,    NG_V,    NG_B, _______, _______,    NG_N,    NG_M, NG_COMM,  NG_DOT, NG_SLSH, _______,
+ // |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
+      _______, _______, _______, _______, _______, _______, _______, _______,_______,_______, _______, _______, _______, _______
  // `-----------------------------------------------------------------------------------------------------------------------------'
    ),
 
   [_LOWER] = LAYOUT(
  // ,-----------------------------------------------------.                 ,-----------------------------------------------------.
-      _______, _______,   _______,   _______,   _______,   _______,                     KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,
+      _______, _______,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                     KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F11,  KC_F12,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-      _______,   _______,  KC_END,   KC_UP,    KC_P, KC_PGUP,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
+      _______,   KC_F1,  KC_END,   KC_UP,    KC_P, KC_PGUP,                      KC_J,    KC_L,    KC_U,    KC_Y,  KC_F10, _______,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
       _______, KC_HOME, KC_LEFT, KC_DOWN,KC_RIGHT, KC_PGDN,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
  // |--------+--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+--------+--------|
@@ -156,7 +170,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #if defined(ENCODER_MAP_ENABLE)
 const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
-    [_QWERTY] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN),    ENCODER_CCW_CW(KC_VOLD, KC_VOLU)  },
+    [_COLEMAK] = { ENCODER_CCW_CW(KC_MS_WH_UP, KC_MS_WH_DOWN),    ENCODER_CCW_CW(KC_VOLD, KC_VOLU)  },
     [_LOWER] =  { ENCODER_CCW_CW(KC_PGUP, KC_PGDN),  ENCODER_CCW_CW(KC_HOME, KC_END)  },
     [_RAISE] =  { ENCODER_CCW_CW(UG_VALD, UG_VALU),  ENCODER_CCW_CW(UG_SPDD, UG_SPDU)  },
     [_ADJUST] = { ENCODER_CCW_CW(UG_PREV, UG_NEXT), ENCODER_CCW_CW(KC_RIGHT, KC_LEFT) },
@@ -164,10 +178,10 @@ const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
 #endif
 
 void matrix_init_user(void) {
-  // ???
+  // 薙刀式
 
   set_naginata(_NAGINATA);
-  // ???
+  // 薙刀式
 }
 
 static bool raise_pressed = false;
@@ -177,56 +191,56 @@ static uint16_t henkan_pressed_time = 0;
 static bool mhenkan_pressed = false;
 static uint16_t mhenkan_pressed_time = 0;
 
-static bool lower_pressed = false;
-static uint16_t lower_pressed_time = 0;
-static bool bspc_active = false;
-static bool backspace_sent = false;  // ???BSPC?????????????
-static bool other_key_pressed = false;  // ??
+// LOWERキー状態管理用構造体
+static struct {
+    bool pressed;
+    uint16_t pressed_time;
+    uint16_t released_time;
+    bool other_key_pressed;
+    bool bspc_active;
+    bool backspace_sent;
+} lower_state = {0};
 
-layer_state_t layer_state_set_user(layer_state_t state) {
-  return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
-}
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (record->event.pressed &&  (keycode != LOWER)) {
-        other_key_pressed = true;
+    // 他のキー押下検出
+    if (record->event.pressed && keycode != LOWER) {
+        lower_state.pressed = false;
+        lower_state.other_key_pressed = true;
+        lower_state.backspace_sent = false;
     }
+
     switch (keycode) {
         case LOWER:
             if (record->event.pressed) {
-                lower_pressed = true;
-                lower_pressed_time = record->event.time;
-                // LOWER??????????????
-                other_key_pressed = false;
+                lower_state.pressed = true;
+                lower_state.pressed_time = record->event.time;
+                lower_state.other_key_pressed = false;
+                lower_state.bspc_active = false;
 
                 layer_on(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
-
             } else {
-                layer_off(_LOWER);
-                update_tri_layer(_LOWER, _RAISE, _ADJUST);
-
-                if (lower_pressed && !bspc_active && !other_key_pressed &&
-                    (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM)) {
+                // 単打判定（他のキーが押されていない && TAPPING_TERM以内）
+                if (timer_elapsed(lower_state.pressed_time) < TAPPING_TERM &&
+                    !lower_state.other_key_pressed) {
                     register_code(KC_BSPC);
                     unregister_code(KC_BSPC);
-                    backspace_sent = true;
-                } else {
-                    // Do nothing if the key was held for too long
-                    backspace_sent = false;
+                    lower_state.backspace_sent = true;
+                    lower_state.released_time = record->event.time;
                 }
 
-                if (bspc_active) {
+                if (lower_state.bspc_active) {
                     unregister_code(KC_BSPC);
-                    bspc_active = false;
-                    backspace_sent = false;
+                    lower_state.bspc_active = false;
+                    lower_state.backspace_sent = false;
                 }
 
-                lower_pressed = false;
-
+                layer_off(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
+                lower_state.pressed = false;
             }
             return false;
-            break;
 
         case RAISE:
             if (record->event.pressed) {
@@ -310,4 +324,59 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 return true;
             }
     }
+
+
+
+    // 薙刀式とその他の処理
+    if (!twpair_on_jis(keycode, record))
+        return false;
+    if (!process_naginata(keycode, record))
+        return true;
+
+    return true;
+
+
 }
+
+// matrix_scan_user関数内
+void matrix_scan_user(void) {
+    // BSPCリピート開始条件
+    if (lower_state.pressed &&
+        lower_state.backspace_sent &&
+        !lower_state.bspc_active &&
+        !lower_state.other_key_pressed &&
+        (timer_elapsed(lower_state.released_time) < TAPPING_TERM)) {
+            lower_state.bspc_active = true;
+            register_code(KC_BSPC);
+            lower_state.backspace_sent = false;
+    }
+
+    // リピート終了条件
+    if ((!lower_state.pressed && lower_state.bspc_active) ||
+        lower_state.other_key_pressed) {
+        unregister_code(KC_BSPC);
+        lower_state.bspc_active = false;
+    }
+}
+
+void keyboard_post_init_user(void) {
+    rgb_matrix_enable();
+    rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+    rgb_matrix_sethsv(HSV_GREEN);
+}
+
+layer_state_t layer_state_set_user(layer_state_t state) {
+    uint8_t current_layer = get_highest_layer(state);
+
+    // LED色の設定
+    switch (current_layer) {
+        case _BASE:     rgb_matrix_sethsv(HSV_GREEN);   break;
+        case _NAGINATA: rgb_matrix_sethsv(HSV_ORANGE); break;
+        case _10KEY:    rgb_matrix_sethsv(HSV_BLUE);   break;
+        case _LOWER:    rgb_matrix_sethsv(HSV_PURPLE); break;
+        case _RAISE:    rgb_matrix_sethsv(HSV_RED);    break;
+        case _ADJUST:   rgb_matrix_sethsv(HSV_YELLOW); break;
+    }
+    return state;
+}
+

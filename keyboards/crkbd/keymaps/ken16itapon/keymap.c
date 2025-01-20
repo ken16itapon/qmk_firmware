@@ -185,6 +185,17 @@ void matrix_init_user(void) {
 }
 
 
+// LOWERキー状態管理用構造体
+static struct {
+    bool pressed;
+    uint16_t pressed_time;
+    uint16_t released_time;
+    bool other_key_pressed;
+    bool bspc_active;
+    bool backspace_sent;
+    bool rapid_press;
+} lower_state = {0};
+
 static bool raise_pressed = false;
 static uint16_t raise_pressed_time = 0;
 static bool henkan_pressed = false;
@@ -192,52 +203,52 @@ static uint16_t henkan_pressed_time = 0;
 static bool mhenkan_pressed = false;
 static uint16_t mhenkan_pressed_time = 0;
 
-static bool lower_pressed = false;
-static uint16_t lower_pressed_time = 0;
-static uint16_t lower_released_time = 0;
-static bool bspc_active = false;
-static bool backspace_sent = false;
-static bool other_key_pressed = false;
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // 他のキー押下検出
     if (record->event.pressed && keycode != LOWER) {
-        lower_pressed = false;
-        other_key_pressed = true;
-        backspace_sent = false;
+        lower_state.pressed = false;
+        lower_state.other_key_pressed = true;
+        lower_state.backspace_sent = false;
     }
 
     switch (keycode) {
         case LOWER:
             if (record->event.pressed) {
-                lower_pressed = true;
-                lower_pressed_time = record->event.time;
-                other_key_pressed = false;
-                bspc_active = false; // 他のキーとの同時押しを考慮して、BSPCをリセット
+                if (timer_elapsed(lower_state.released_time) < TAPPING_TERM) {
+                    lower_state.rapid_press = true; // 連打
+                } else {
+                    lower_state.rapid_press = false; // 連打リセット
+                }
+
+                lower_state.pressed = true;
+                lower_state.pressed_time = record->event.time;
+                lower_state.other_key_pressed = false;
+                lower_state.bspc_active = false;
 
                 layer_on(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
             } else {
                 // 単打判定（他のキーが押されていない && TAPPING_TERM以内）
-                if (timer_elapsed(lower_pressed_time) < TAPPING_TERM && !other_key_pressed) {
+                if (timer_elapsed(lower_state.pressed_time) < TAPPING_TERM &&
+                    !lower_state.other_key_pressed &&
+                    !lower_state.rapid_press) { // 連打でない場合のみBSPC発行
                     register_code(KC_BSPC);
                     unregister_code(KC_BSPC);
-                    backspace_sent = true;
-                    lower_released_time = record->event.time;
+                    lower_state.backspace_sent = true;
+                    lower_state.released_time = record->event.time;
                 }
 
-                if (bspc_active) {
+                if (lower_state.bspc_active) {
                     unregister_code(KC_BSPC);
-                    bspc_active = false;
-                    backspace_sent = false;
+                    lower_state.bspc_active = false;
+                    // lower_state.backspace_sent = false;
                 }
 
                 layer_off(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
-                lower_pressed = false;
+                lower_state.pressed = false;
             }
             return false;
-            break;
 
         case RAISE:
             if (record->event.pressed) {
@@ -337,21 +348,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
-    // 既に一度BSPCが送信されていて、lower_released_time<TAPPING_TERMならリピート開始
-    if (lower_pressed &&
-        backspace_sent &&
-        !bspc_active &&
-        !other_key_pressed &&
-        (timer_elapsed(lower_released_time) < TAPPING_TERM)) {
-            bspc_active = true;
+    // BSPCリピート開始条件
+    if (lower_state.pressed &&
+        lower_state.backspace_sent &&
+        !lower_state.bspc_active &&
+        !lower_state.other_key_pressed &&
+        (timer_elapsed(lower_state.released_time) < TAPPING_TERM)) {
+            lower_state.bspc_active = true;
             register_code(KC_BSPC);
-            backspace_sent = false;    // リピート開始時にBSPC送信フラグをリセット
+            lower_state.backspace_sent = false;
     }
 
-        // リピート終了条件
-    if ((!lower_pressed && bspc_active) || other_key_pressed) {
+    // リピート終了条件
+    if ((!lower_state.pressed && lower_state.bspc_active) ||
+        lower_state.other_key_pressed) {
         unregister_code(KC_BSPC);
-        bspc_active = false;
+        lower_state.bspc_active = false;
     }
 }
 
