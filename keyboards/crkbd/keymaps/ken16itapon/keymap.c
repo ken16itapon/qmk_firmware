@@ -198,21 +198,13 @@ static uint16_t lower_released_time = 0;
 static bool bspc_active = false;
 static bool backspace_sent = false;
 static bool other_key_pressed = false;
-static bool tapping_term_expired = false;
-
-static layer_state_t prev_state = 0;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // 他のキー押下検出
     if (record->event.pressed && keycode != LOWER) {
+        lower_pressed = false;
         other_key_pressed = true;
         backspace_sent = false;
-    }
-
-    // TAPPING_TERM経過チェック
-    if (lower_pressed && !tapping_term_expired &&
-        (TIMER_DIFF_16(record->event.time, lower_pressed_time) >= TAPPING_TERM)) {
-        tapping_term_expired = true;
     }
 
     switch (keycode) {
@@ -220,22 +212,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 lower_pressed = true;
                 lower_pressed_time = record->event.time;
-                tapping_term_expired = false;
                 other_key_pressed = false;
+                bspc_active = false; // 他のキーとの同時押しを考慮して、BSPCをリセット
 
                 layer_on(_LOWER);
                 update_tri_layer(_LOWER, _RAISE, _ADJUST);
             } else {
-                layer_off(_LOWER);
-                update_tri_layer(_LOWER, _RAISE, _ADJUST);
-
-                // 単打判定とBSPC送信
-                if (!bspc_active && !other_key_pressed && (!tapping_term_expired ||
-                    (TIMER_DIFF_16(record->event.time, lower_released_time) < TAPPING_TERM)) &&
-                    (TIMER_DIFF_16(record->event.time, lower_pressed_time) < TAPPING_TERM))  {
-                        register_code(KC_BSPC);
-                        unregister_code(KC_BSPC);
-                        backspace_sent = true;
+                // 単打判定（他のキーが押されていない && TAPPING_TERM以内）
+                if (timer_elapsed(lower_pressed_time) < TAPPING_TERM && !other_key_pressed) {
+                    register_code(KC_BSPC);
+                    unregister_code(KC_BSPC);
+                    backspace_sent = true;
+                    lower_released_time = record->event.time;
                 }
 
                 if (bspc_active) {
@@ -244,8 +232,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     backspace_sent = false;
                 }
 
+                layer_off(_LOWER);
+                update_tri_layer(_LOWER, _RAISE, _ADJUST);
                 lower_pressed = false;
-                lower_released_time = record->event.time;
             }
             return false;
             break;
@@ -348,11 +337,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
-    // 既に一度BSPCが送信されていて、かつTAPPING_TERMを超えて押されている場合にリピート開始
-    if (lower_pressed && backspace_sent && !bspc_active &&
-        !other_key_pressed && (timer_elapsed(lower_pressed_time) >= TAPPING_TERM)) {
-        register_code(KC_BSPC);
-        bspc_active = true;
+    // 既に一度BSPCが送信されていて、lower_released_time<TAPPING_TERMならリピート開始
+    if (lower_pressed &&
+        backspace_sent &&
+        !bspc_active &&
+        !other_key_pressed &&
+        (timer_elapsed(lower_released_time) < TAPPING_TERM)) {
+            bspc_active = true;
+            register_code(KC_BSPC);
+            backspace_sent = false;    // リピート開始時にBSPC送信フラグをリセット
+    }
+
+        // リピート終了条件
+    if ((!lower_pressed && bspc_active) || other_key_pressed) {
+        unregister_code(KC_BSPC);
+        bspc_active = false;
     }
 }
 
@@ -429,29 +428,6 @@ void keyboard_post_init_user(void) {
 
 layer_state_t layer_state_set_user(layer_state_t state) {
     uint8_t current_layer = get_highest_layer(state);
-    uint8_t prev_layer = get_highest_layer(prev_state);
-
-    // レイヤー移動を検出
-    if (current_layer != prev_layer) {
-        // _LOWERへの移動
-        if (current_layer == _LOWER) {
-            // bspc_active = false;
-            // backspace_sent = false;
-            // tapping_term_expired = false;
-        // _LOWERからの移動
-        } else if (prev_layer == _LOWER) {
-            // フラグを保持したまま
-
-        // _LOWERが関係しない移動
-        } else {
-            bspc_active = false;
-            backspace_sent = false;
-            other_key_pressed = false;
-            // tapping_term_expired = false;
-        }
-    }
-
-    prev_state = state;
 
     // LED色の設定
     switch (current_layer) {

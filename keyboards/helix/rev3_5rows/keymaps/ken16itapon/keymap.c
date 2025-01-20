@@ -14,30 +14,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include QMK_KEYBOARD_H
+#include "keymap_japanese.h"
+#include "naginata.h"
+#include "twpair_on_jis.h"
+#include "raw_hid.h"
+#include "process_tap_dance.h"
 
+NGKEYS naginata_keys;
 
 // Defines names for use in layer keycodes and the keymap
 enum layer_names {
-  _COLEMAK = 0,
+  _BASE = 0,
   _NAGINATA,
   _LOWER,
   _RAISE,
   _ADJUST,
-    _10KEY,
-    _QWERTY
+  _10KEY//,
+//   _COLEMAK,
+//   _QWERTY
 };
 
 // Defines the keycodes used by our macros in process_record_user
 enum custom_keycodes {
-  HENKAN = NG_SAFE_RANGE,
-  MHENKAN
-  ADJUST,
-  RGBRST
+  MHENKAN = NG_SAFE_RANGE,
+  HENKAN,
+  LOWER,
+  RAISE,
+  ADJUST
 };
 
 #define S_ENTER SFT_T(KC_ENT)
 #define C_SPACE CTL_T(KC_SPACE)
-#define CS_TAB  TD(TD_CSTAB)  // ä˘ë∂ÇÃCS_TABÉ}ÉNÉùÇù„ùëÇ´
+// #define CS_TAB  TD(TD_CSTAB)  // Êó¢Â≠ò„ÅÆCS_TAB„Éû„ÇØ„É≠„Çí‰∏äÊõ∏„Åç
 #define C_BSPC  CTL_T(KC_BSPC)
 #define S_ESC   SFT_T(KC_ESC)
 #define COPILOT LSG(KC_F23)
@@ -51,29 +59,29 @@ enum custom_keycodes {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [_COLEMAK] = LAYOUT(
  // ,-----------------------------------------------------.                 ,-----------------------------------------------------.
-       KC_GRV,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,
+       KC_ESC,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0, KC_MINS,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-       KC_ESC,    KC_Q,    KC_W,    KC_F,    KC_P,    KC_G,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
+       KC_GRV,    KC_1,    KC_W,    KC_F,    KC_P,    KC_G,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
        CS_TAB,    KC_Q,    KC_R,    KC_S,    KC_T,    KC_D,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
  // |--------+--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+--------+--------|
-      KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B, COPILOT,  TENKEY,    KC_K,    KC_M,  C_COMM,  KC_DOT, KC_SLSH,  KC_ENT,
+       C_BSPC,    KC_A,    KC_X,    KC_C,    KC_V,    KC_B, COPILOT,  TENKEY,    KC_K,    KC_M,  C_COMM,  KC_DOT, KC_SLSH,  KC_ENT,
  // |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-      KC_LCTL,  KC_ESC, KC_LALT, KC_LGUI,    EISU,   LOWER, KC_BSPC,    R_ENT,   RAISE,G(KANA), KC_RGUI, KC_RALT, KC_BSLS, KC_RGHT
+     KC_LSHFT,    KC_Z, KC_LALT, KC_LGUI,    EISU,   LOWER, KC_BSPC,    R_ENT,   RAISE,G(KANA), KC_RGUI, KC_RALT, KC_BSLS, KC_RGHT
  // `-----------------------------------------------------------------------------------------------------------------------------'
    ),
 
   [_LOWER] = LAYOUT(
  // ,-----------------------------------------------------.                 ,-----------------------------------------------------.
-       KC_GRV,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                     KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,
+      _______, _______,   _______,   _______,   _______,   _______,                     KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-       KC_ESC,   KC_F1,  KC_END,   KC_UP,    KC_P, KC_PGUP,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
+      _______,   _______,  KC_END,   KC_UP,    KC_P, KC_PGUP,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
  // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-       CS_TAB, KC_HOME, KC_LEFT, KC_DOWN,KC_RIGHT, KC_PGDN,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
+      _______, KC_HOME, KC_LEFT, KC_DOWN,KC_RIGHT, KC_PGDN,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
  // |--------+--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+--------+--------|
-       C_BS ,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B, COPILOT,  TENKEY,    KC_K,    KC_M,  C_COMM,  KC_DOT, KC_SLSH,  KC_ENT,
+      _______,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B, COPILOT,  TENKEY,    KC_K,    KC_M,  C_COMM,  KC_DOT, KC_SLSH,  KC_ENT,
  // |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-      KC_LCTL,  KC_ESC, KC_LALT, KC_LGUI,    EISU,   LOWER, KC_BSPC,    R_ENT,   RAISE,G(KANA), KC_RGUI, KC_RALT, KC_BSLS, KC_RGHT
+      _______,  KC_ESC, KC_LALT, KC_LGUI,    EISU,   LOWER, KC_BSPC,    R_ENT,   RAISE,G(KANA), KC_RGUI, KC_RALT, KC_BSLS, KC_RGHT
  // `-----------------------------------------------------------------------------------------------------------------------------'
    ),
       _______, _______, _______, _______, _______, _______,                   _______, _______, _______, _______, _______, _______,
