@@ -100,6 +100,18 @@ typedef enum naginata_keycodes {
 
   NG_X1,
 
+  NG_1,
+  NG_2,
+  NG_3,
+  NG_4,
+  NG_5,
+  NG_6,
+  NG_7,
+  NG_8,
+  NG_9,
+  NG_0,
+  NG_MINS,
+
   NG_ON,
   NG_OFF,
   NG_CLR,
@@ -110,7 +122,10 @@ typedef enum naginata_keycodes {
   NG_SHOS,
   NG_TAYO,
   NG_KOTI,
+
+  NEW_SAFE_RANGE
 } NGKEYS;
+
 
 // EEPROMに保存する設定
 typedef union {

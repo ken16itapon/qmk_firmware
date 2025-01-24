@@ -20,60 +20,77 @@
 #include <string.h>
 
 #define NGBUFFER 10 // キー入力バッファのサイズ
+#define SHINGETA
 
 static uint8_t ng_chrcount = 0; // 文字キー入力のカウンタ
 static bool is_naginata = false; // 薙刀式がオンかオフか
 static uint8_t naginata_layer = 0; // NG_*を配置しているレイヤー番号
-static uint32_t keycomb = 0UL; // 同時押しの状態を示す。32bitの各ビットがキーに対応する。
+static uint64_t keycomb = 0ULL; // 同時押しの状態を示す。32bitの各ビットがキーに対応する。
+#ifndef SHINGETA
 static uint16_t ngon_keys[2]; // 薙刀式をオンにするキー(通常HJ)
 static uint16_t ngoff_keys[2]; // 薙刀式をオフにするキー(通常FG)
+#endif
 static bool is_henshu = false; // 編集モードかどうか
 
 // 31キーを32bitの各ビットに割り当てる
-#define B_Q    (1UL<<0)
-#define B_W    (1UL<<1)
-#define B_E    (1UL<<2)
-#define B_R    (1UL<<3)
-#define B_T    (1UL<<4)
+#define B_Q    ((uint64_t)1ULL<<0)
+#define B_W    ((uint64_t)1ULL<<1)
+#define B_E    ((uint64_t)1ULL<<2)
+#define B_R    ((uint64_t)1ULL<<3)
+#define B_T    ((uint64_t)1ULL<<4)
 
-#define B_Y    (1UL<<5)
-#define B_U    (1UL<<6)
-#define B_I    (1UL<<7)
-#define B_O    (1UL<<8)
-#define B_P    (1UL<<9)
+#define B_Y    ((uint64_t)1ULL<<5)
+#define B_U    ((uint64_t)1ULL<<6)
+#define B_I    ((uint64_t)1ULL<<7)
+#define B_O    ((uint64_t)1ULL<<8)
+#define B_P    ((uint64_t)1ULL<<9)
 
-#define B_A    (1UL<<10)
-#define B_S    (1UL<<11)
-#define B_D    (1UL<<12)
-#define B_F    (1UL<<13)
-#define B_G    (1UL<<14)
+#define B_A    ((uint64_t)1ULL<<10)
+#define B_S    ((uint64_t)1ULL<<11)
+#define B_D    ((uint64_t)1ULL<<12)
+#define B_F    ((uint64_t)1ULL<<13)
+#define B_G    ((uint64_t)1ULL<<14)
 
-#define B_H    (1UL<<15)
-#define B_J    (1UL<<16)
-#define B_K    (1UL<<17)
-#define B_L    (1UL<<18)
-#define B_SCLN (1UL<<19)
+#define B_H    ((uint64_t)1ULL<<15)
+#define B_J    ((uint64_t)1ULL<<16)
+#define B_K    ((uint64_t)1ULL<<17)
+#define B_L    ((uint64_t)1ULL<<18)
+#define B_SCLN ((uint64_t)1ULL<<19)
 
-#define B_Z    (1UL<<20)
-#define B_X    (1UL<<21)
-#define B_C    (1UL<<22)
-#define B_V    (1UL<<23)
-#define B_B    (1UL<<24)
+#define B_Z    ((uint64_t)1ULL<<20)
+#define B_X    ((uint64_t)1ULL<<21)
+#define B_C    ((uint64_t)1ULL<<22)
+#define B_V    ((uint64_t)1ULL<<23)
+#define B_B    ((uint64_t)1ULL<<24)
 
-#define B_N    (1UL<<25)
-#define B_M    (1UL<<26)
-#define B_COMM (1UL<<27)
-#define B_DOT  (1UL<<28)
-#define B_SLSH (1UL<<29)
+#define B_N    ((uint64_t)1ULL<<25)
+#define B_M    ((uint64_t)1ULL<<26)
+#define B_COMM ((uint64_t)1ULL<<27)
+#define B_DOT  ((uint64_t)1ULL<<28)
+#define B_SLSH ((uint64_t)1ULL<<29)
 
-#define B_X1   (1UL<<30)
+#ifdef SHINGETA
+#define B_X1   ((uint64_t)1ULL<<30)
+#define B_1    ((uint64_t)1ULL<<31)
+#define B_2    ((uint64_t)1ULL<<32)
+#define B_3    ((uint64_t)1ULL<<33)
+#define B_4    ((uint64_t)1ULL<<34)
+#define B_5    ((uint64_t)1ULL<<35)
+#define B_6    ((uint64_t)1ULL<<36)
+#define B_7    ((uint64_t)1ULL<<37)
+#define B_8    ((uint64_t)1ULL<<38)
+#define B_9    ((uint64_t)1ULL<<39)
+#define B_0    ((uint64_t)1ULL<<40)
+#define B_MINS ((uint64_t)1ULL<<41)
+#endif
+
 
 // 文字入力バッファ
 static uint16_t ninputs[NGBUFFER];
 
 // キーコードとキービットの対応
 // メモリ削減のため配列はNG_Qを0にしている
-const uint32_t ng_key[] = {
+const uint64_t ng_key[] = {
   [NG_Q    - NG_Q] = B_Q,
   [NG_W    - NG_Q] = B_W,
   [NG_E    - NG_Q] = B_E,
@@ -110,12 +127,25 @@ const uint32_t ng_key[] = {
   [NG_DOT  - NG_Q] = B_DOT,
   [NG_SLSH - NG_Q] = B_SLSH,
 
-  [NG_X1   - NG_Q] = B_X1
+#ifdef SHINGETA
+  [NG_X1   - NG_Q] = B_X1,
+  [NG_1    - NG_Q] = B_1,
+  [NG_2    - NG_Q] = B_2,
+  [NG_3    - NG_Q] = B_3,
+  [NG_4    - NG_Q] = B_4,
+  [NG_5    - NG_Q] = B_5,
+  [NG_6    - NG_Q] = B_6,
+  [NG_7    - NG_Q] = B_7,
+  [NG_8    - NG_Q] = B_8,
+  [NG_9    - NG_Q] = B_9,
+  [NG_0    - NG_Q] = B_0,
+  [NG_MINS - NG_Q] = B_MINS
+#endif
 };
 
 // カナ変換テーブル
 typedef struct {
-  uint32_t key;
+  uint64_t key;
   char kana[6];
 } naginata_keymap;
 
@@ -137,7 +167,7 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_S               , .kana = "to"},
   {.key = B_D               , .kana = "ka"},
   {.key = B_F               , .kana = "nn"},
-  {.key = B_G               , .kana = "ltu"},
+  {.key = B_G               , .kana = "xtu"},
   {.key = B_H               , .kana = "ku"},
   {.key = B_J               , .kana = "u"},
   {.key = B_K               , .kana = "i"},
@@ -175,7 +205,6 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_K|B_G        , .kana = "yu"},
   {.key = B_D|B_H        , .kana = "he"},
   {.key = B_D|B_J        , .kana = "a"},
-  {.key = B_D|B_K        , .kana = ""},
   {.key = B_D|B_L        , .kana = "o"},
   {.key = B_D|B_SCLN     , .kana = "e"},
 
@@ -190,6 +219,12 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_D|B_DOT      , .kana = "pu"},
   {.key = B_D|B_SLSH     , .kana = "vu"},
 
+  {.key = B_K|B_1        , .kana = "xa"},
+  {.key = B_K|B_2        , .kana = "xi"},
+  {.key = B_K|B_3        , .kana = "xu"},
+  {.key = B_K|B_4        , .kana = "xe"},
+  {.key = B_K|B_5        , .kana = "xo"},
+
   // 薬指シフト
   {.key = B_L|B_Q        , .kana = "di"},
   {.key = B_L|B_W        , .kana = "me"},
@@ -201,7 +236,6 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_S|B_I        , .kana = "do"},
   {.key = B_S|B_O        , .kana = "ya"},
   {.key = B_S|B_P        , .kana = "je"},
-  {.key = B_S|B_X1       , .kana = ""},
 
   {.key = B_L|B_A        , .kana = "wo"},
   {.key = B_L|B_S        , .kana = "sa"},
@@ -210,8 +244,6 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_L|B_G        , .kana = "zu"},
   {.key = B_S|B_H        , .kana = "bi"},
   {.key = B_S|B_J        , .kana = "ra"},
-  {.key = B_S|B_K        , .kana = ""},
-  {.key = B_S|B_L        , .kana = ""},
   {.key = B_S|B_SCLN     , .kana = "so"},
 
   {.key = B_L|B_Z        , .kana = "ze"},
@@ -225,6 +257,12 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_S|B_DOT      , .kana = "po"},
   {.key = B_S|B_SLSH     , .kana = "tile"},
 
+  {.key = B_L|B_1        , .kana = "xya"},
+  {.key = B_L|B_2        , .kana = "mya"},
+  {.key = B_L|B_3        , .kana = "myu"},
+  {.key = B_L|B_4        , .kana = "myo"},
+  {.key = B_L|B_5        , .kana = "xwa"},
+
   // 上段中指シフト
   {.key = B_I|B_Q        , .kana = "hyu"},
   {.key = B_I|B_W        , .kana = "syu"},
@@ -233,8 +271,6 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_I|B_T        , .kana = "tyu"},
 
   {.key = B_I|B_A        , .kana = "hyo"},
-  {.key = B_I|B_S        , .kana = ""},
-  {.key = B_I|B_D        , .kana = ""},
   {.key = B_I|B_F        , .kana = "kyo"},
   {.key = B_I|B_G        , .kana = "tyo"},
 
@@ -244,6 +280,12 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_I|B_V        , .kana = "kya"},
   {.key = B_I|B_B        , .kana = "tya"},
 
+  {.key = B_I|B_1        , .kana = "xyu"},
+  {.key = B_I|B_2        , .kana = "bya"},
+  {.key = B_I|B_3        , .kana = "byu"},
+  {.key = B_I|B_4        , .kana = "byo"},
+  {.key = B_I|B_5        , .kana = "xyi"},
+
   // 上段薬指シフト
   {.key = B_O|B_Q        , .kana = "ryu"},
   {.key = B_O|B_W        , .kana = "zyu"},
@@ -252,16 +294,19 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_O|B_T        , .kana = "nyu"},
 
   {.key = B_O|B_A        , .kana = "ryo"},
-  {.key = B_O|B_S        , .kana = ""},
-  {.key = B_O|B_D        , .kana = ""},
   {.key = B_O|B_F        , .kana = "gyo"},
   {.key = B_O|B_G        , .kana = "nyo"},
 
   {.key = B_O|B_Z        , .kana = "rya"},
-  {.key = B_O|B_X        , .kana = ""},
   {.key = B_O|B_C        , .kana = "zya"},
   {.key = B_O|B_V        , .kana = "gya"},
   {.key = B_O|B_B        , .kana = "nya"},
+
+  {.key = B_O|B_1        , .kana = "xyo"},
+  {.key = B_O|B_2        , .kana = "pya"},
+  {.key = B_O|B_3        , .kana = "pyu"},
+  {.key = B_O|B_4        , .kana = "pyo"},
+  {.key = B_O|B_5        , .kana = "xye"},
 
   // 下段中指シフト
   {.key = B_COMM|B_Q      , .kana = "myu"},
@@ -275,23 +320,21 @@ const PROGMEM naginata_keymap ngmap[] = {
   {.key = B_COMM|B_G      , .kana = "xyo"},
 
   {.key = B_COMM|B_Z      , .kana = "mya"},
-  {.key = B_COMM|B_X      , .kana = ""},
   {.key = B_COMM|B_C      , .kana = "bya"},
   {.key = B_COMM|B_V      , .kana = "pya"},
   {.key = B_COMM|B_B      , .kana = "xya"},
 
   // 下段薬指シフト
-  {.key = B_DOT|B_Q      , .kana = ""},
   {.key = B_DOT|B_W      , .kana = "xi"},
   {.key = B_DOT|B_E      , .kana = "xu"},
   {.key = B_DOT|B_R      , .kana = "xe"},
   {.key = B_DOT|B_T      , .kana = "xo"},
 
-  {.key = B_DOT|B_Z      , .kana = ""},
-  {.key = B_DOT|B_X      , .kana = ""},
+  {.key = B_DOT|B_G      , .kana = "wyi"},
+
   {.key = B_DOT|B_C      , .kana = "xa"},
   {.key = B_DOT|B_V      , .kana = "xwa"},
-  {.key = B_DOT|B_B      , .kana = ""},
+  {.key = B_DOT|B_B      , .kana = "wye"},
 
   // 記号
   {.key = B_R|B_G        , .kana = "/"},
@@ -319,7 +362,7 @@ void set_naginata(uint8_t layer) {
     naginata_config.kouchi_shift = 0;
     eeconfig_update_user(naginata_config.raw);
   }
-  ng_set_unicode_mode(naginata_config.os);
+//   ng_set_unicode_mode(naginata_config.os);
 }
 
 // 薙刀式をオン
@@ -339,9 +382,11 @@ void naginata_off(void) {
 }
 
 // 薙刀式のon/off状態を返す
+__attribute__((used))
 bool naginata_state(void) {
   return is_naginata;
 }
+
 
 // バッファから先頭n文字を削除する
 void compress_buffer(int n) {
@@ -356,6 +401,7 @@ void compress_buffer(int n) {
   ng_chrcount -= n;
 }
 
+#ifdef ROW_ENABLE
 void switchOS(uint8_t os) {
   naginata_config.os = os;
   eeconfig_update_user(naginata_config.raw);
@@ -457,6 +503,7 @@ void ng_send_unicode_string_P(const char *pstr) {
       break;
   }
 }
+#endif
 
 // modifierが押されたら薙刀式レイヤーをオフしてベースレイヤーに戻す
 // get_mods()がうまく動かない
@@ -482,6 +529,7 @@ bool process_modifier(uint16_t keycode, keyrecord_t *record) {
 static uint16_t fghj_buf = 0; // 押しているJかKのキーコード
 static uint8_t nkeypress = 0; // 同時にキーを押している数
 
+#ifndef SHINGETA
 // 薙刀式の起動処理(容量が大きいCOMBOを使わない)
 bool enable_naginata(uint16_t keycode, keyrecord_t *record) {
   // キープレス
@@ -552,6 +600,7 @@ bool enable_naginata(uint16_t keycode, keyrecord_t *record) {
   fghj_buf = 0;
   return true;
 }
+#endif
 
 // バッファをクリアする
 void naginata_clear(void) {
@@ -565,6 +614,7 @@ void naginata_clear(void) {
 }
 
 // 薙刀式の入力処理
+__attribute__((used))
 bool process_naginata(uint16_t keycode, keyrecord_t *record) {
 
   // まれに薙刀モードオンのまま、レイヤーがオフになることがあるので、対策
@@ -575,6 +625,7 @@ bool process_naginata(uint16_t keycode, keyrecord_t *record) {
   if (n_modifier > 0 && layer_state_is(naginata_layer))
     layer_off(naginata_layer);
 
+#ifdef ROW_ENABLE
   // OS切り替え(UNICODE出力)
   if (record->event.pressed) {
     switch (keycode) {
@@ -620,33 +671,39 @@ bool process_naginata(uint16_t keycode, keyrecord_t *record) {
         break;
     }
   }
+#endif
 
+#ifndef SHINGETA
   if (!is_naginata)
     // return true;
     return enable_naginata(keycode, record);
+#endif
 
   if (process_modifier(keycode, record))
     return true;
 
   if (record->event.pressed) {
     switch (keycode) {
-    //   case NG_SHFT ... NG_SHFT2:
-    //     if (!naginata_config.kouchi_shift) {
-    //       if (ng_chrcount >= 1) {
-    //         naginata_type();
-    //         keycomb = 0UL;
-    //       }
-    //       ninputs[ng_chrcount] = keycode; // キー入力をバッファに貯める
-    //       ng_chrcount++;
-    //       keycomb |= ng_key[keycode - NG_Q]; // キーの重ね合わせ
-    //       return false;
-    //       break;
-    //     }
+#ifndef SHINGETA
+      case NG_SHFT ... NG_SHFT2:
+        if (!naginata_config.kouchi_shift) {
+          if (ng_chrcount >= 1) {
+            naginata_type();
+            keycomb = 0UL;
+          }
+          ninputs[ng_chrcount] = keycode; // キー入力をバッファに貯める
+          ng_chrcount++;
+          keycomb |= ng_key[keycode - NG_Q]; // キーの重ね合わせ
+          return false;
+          break;
+        }
+#endif
       case NG_Q ... NG_X1:
         ninputs[ng_chrcount] = keycode; // キー入力をバッファに貯める
         ng_chrcount++;
         keycomb |= ng_key[keycode - NG_Q]; // キーの重ね合わせ
-        // 編集モードの判定
+ #ifndef NG_NO_HENSHU
+         // 編集モードの判定
         if (keycomb == (B_D | B_F) ||
             keycomb == (B_J | B_K) ||
             keycomb == (B_C | B_V) ||
@@ -661,6 +718,7 @@ bool process_naginata(uint16_t keycode, keyrecord_t *record) {
             (keycomb & (B_U | B_I)) != (B_U | B_I) &&
             (keycomb & (B_E | B_R)) != (B_E | B_R))
           is_henshu = false;
+ #endif
         // 変換候補が絞られるか、バッファが一杯になったら処理を開始
         int nc = number_of_candidates();
         if (nc == 0 || nc == 1 || ng_chrcount >= NGBUFFER) {
@@ -674,7 +732,8 @@ bool process_naginata(uint16_t keycode, keyrecord_t *record) {
       case NG_Q ... NG_X1:
         // どれかキーを離したら処理を開始する
         keycomb &= ~ng_key[keycode - NG_Q]; // キーの重ね合わせ
-        // 編集モードの判定
+#ifndef NG_NO_HENSHU
+         // 編集モードの判定
         if ((keycomb & (B_D | B_F)) != (B_D | B_F) &&
             (keycomb & (B_J | B_K)) != (B_J | B_K) &&
             (keycomb & (B_C | B_V)) != (B_C | B_V) &&
@@ -682,7 +741,8 @@ bool process_naginata(uint16_t keycode, keyrecord_t *record) {
             (keycomb & (B_U | B_I)) != (B_U | B_I) &&
             (keycomb & (B_E | B_R)) != (B_E | B_R))
           is_henshu = false;
-        if (ng_chrcount > 0) {
+ #endif
+         if (ng_chrcount > 0) {
           naginata_type();
         }
         return false;
@@ -693,6 +753,7 @@ bool process_naginata(uint16_t keycode, keyrecord_t *record) {
 }
 
 // キー入力を文字に変換して出力する
+__attribute__((used))
 void naginata_type(void) {
   // バッファの最初からnt文字目までを検索キーにする。
   // 一致する組み合わせがなければntを減らして=最後の1文字を除いて再度検索する。
@@ -732,11 +793,11 @@ int number_of_candidates() {
     }
   }
 
-/*   // 編集モードは積極的に確定しない
+   // 編集モードは積極的に確定しない
   if (is_henshu) {
     c = 2;
   }
- */
+
   if (c == 1 && ng_chrcount < count_bit(hit)) {
     return -1;
   }
@@ -765,13 +826,13 @@ bool naginata_lookup(int nt, bool shifted) {
   for (int i = 0; i < nt; i++) {
     keycomb_buf |= ng_key[ninputs[i] - NG_Q];
   }
-
-//   // NG_SHFT2はスペースの代わりにエンターを入力する
-//   if (keycomb_buf == B_SHFT && ninputs[0] == NG_SHFT2) {
-//     tap_code(KC_ENT);
-//     compress_buffer(nt);
-//     return true;
-//   }
+#ifndef SHINGETA
+  // NG_SHFT2はスペースの代わりにエンターを入力する
+  if (keycomb_buf == B_SHFT && ninputs[0] == NG_SHFT2) {
+    tap_code(KC_ENT);
+    compress_buffer(nt);
+    return true;
+  }
 
   if (shifted) {
     // // 連続シフトを有効にする
@@ -789,7 +850,8 @@ bool naginata_lookup(int nt, bool shifted) {
     if ((keycomb & B_V) == B_V) keycomb_buf |= B_V;
     if ((keycomb & B_M) == B_M) keycomb_buf |= B_M;
   }
-/*
+#endif
+
   if (is_henshu) {
     switch (keycomb_buf) {
       #ifndef NG_NO_HENSHU
@@ -1342,7 +1404,6 @@ bool naginata_lookup(int nt, bool shifted) {
       // キーから仮名に変換して出力する
       // 通常の仮名
       default:
- */
         for (int i = 0; i < sizeof ngmap / sizeof bngmap; i++) {
           memcpy_P(&bngmap, &ngmap[i], sizeof(bngmap));
           if (keycomb_buf == bngmap.key) {
@@ -1351,13 +1412,14 @@ bool naginata_lookup(int nt, bool shifted) {
             return true;
           }
         }
-//         brake;
-//     }
-//   }
+        break;
+    }
+  }
 
   return false;
 }
 
+#ifdef ROW_ENABLE
 void ng_cut() {
   switch (naginata_config.os) {
     case NG_WIN:
@@ -1418,6 +1480,7 @@ void ng_down(uint8_t c) {
     }
   }
 }
+#endif
 
 void ng_left(uint8_t c) {
   for (uint8_t i = 0; i < c; i++) {
@@ -1439,6 +1502,7 @@ void ng_right(uint8_t c) {
   }
 }
 
+#ifdef ROW_ENABLE
 void ng_home() {
   switch (naginata_config.os) {
     case NG_WIN:
@@ -1547,3 +1611,4 @@ void ng_eof() {
       break;
   }
 }
+#endif
