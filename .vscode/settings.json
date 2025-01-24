@@ -20,6 +20,9 @@
         "utility": "c",
         "ranges": "c"
     },
+    "editor.smoothScrolling": true,
+    "workbench.list.smoothScrolling": true,
+    "terminal.integrated.smoothScrolling": true,
     "[markdown]": {
         "editor.trimAutoWhitespace": false,
         "files.trimTrailingWhitespace": false
@@ -30,5 +33,6 @@
     },
     "clangd.arguments": [
         "--header-insertion=never"
-    ]
+    ],
+    "cmake.sourceDirectory": "D:/home/ken16/Documents/qmk_firmware/lib/googletest"
 }
