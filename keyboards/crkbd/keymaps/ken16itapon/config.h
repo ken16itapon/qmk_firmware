@@ -20,10 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-//#define USE_MATRIX_I2C
+// #define USE_MATRIX_I2C
 
-//#define QUICK_TAP_TERM 0
-//#define TAPPING_TERM 100
+// #define QUICK_TAP_TERM 0
+// #define TAPPING_TERM 100
 
 #ifdef RGB_MATRIX_ENABLE
     #undef RGB_MATRIX_MAXIMUM_BRIGHTNESS
@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_SOLID_COLOR
 #endif
 
-#define TAPPING_TERM 150 // デフォルトは200ms
+#define TAPPING_TERM 180  // デフォルトは200ms
 
 #define NG_NO_HENSHU
 #define NG_NO_KOYUMEISHI

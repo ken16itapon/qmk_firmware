@@ -34,5 +34,21 @@
     "clangd.arguments": [
         "--header-insertion=never"
     ],
-    "cmake.sourceDirectory": "D:/home/ken16/Documents/qmk_firmware/lib/googletest"
+    "cmake.sourceDirectory": "D:/home/ken16/Documents/qmk_firmware/lib/googletest",
+
+    // ターミナル設定
+    "terminal.integrated.defaultProfile.windows": "QMK_MSYS",
+    "terminal.integrated.profiles.windows": {
+        "QMK_MSYS": {
+            "path": "C:/QMK_MSYS/usr/bin/bash.exe",
+            "env": {
+                "PATH": "C:/QMK_MSYS/usr/bin:C:/QMK_MSYS/mingw64/bin:C:/QMK_MSYS/mingw32/bin:$PATH",
+                "MSYSTEM": "MINGW64",
+                "CHERE_INVOKING": "1",
+                "HOME": "D:/home/ken16"
+            },
+            "args": ["--login"],
+            "icon": "terminal-bash"
+        }
+    }
 }

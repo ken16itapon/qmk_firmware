@@ -113,8 +113,7 @@
       "rainbow_swirl": true
     }
   },
-  "processor": "atmega32u4",
-  "bootloader": "caterina",
+
   "layouts": {
     "LAYOUT": {
       "layout": [

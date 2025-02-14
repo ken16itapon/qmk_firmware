@@ -1,0 +1,47 @@
+{
+    "keyboard_name": "Helix rev3 5rows",
+    "manufacturer": "yushakobo",
+    "maintainer": "yushakobo",
+    "processor": "RP2040",
+    "bootloader": "rp2040",
+    "features": {
+        "bootmagic": true,
+        "command": false,
+        "console": false,
+        "nkro": true,
+        "split": true
+    },
+    "split": {
+        "enabled": true,
+        "matrix_pins": {
+            "right": {
+                "rows": ["GP4", "GP5", "GP6", "GP7", "GP8"],
+                "cols": ["GP29", "GP28", "GP27", "GP26", "GP22", "GP20", "GP23"]
+            }
+        },
+        "transport": {
+            "protocol": "serial"
+        }
+    },
+    "encoder": {
+        "rotary": [
+            {
+                "pin_a": "GP16",
+                "pin_b": "GP17"
+            }
+        ]
+    },
+    "ws2812": {
+        "pin": "GP0",
+        "driver": "vendor"
+    },
+    "rgblight": {
+        "led_count": 64,
+        "animations": {
+            "breathing": true,
+            "rainbow_mood": true,
+            "rainbow_swirl": true,
+            "snake": true
+        }
+    }
+}

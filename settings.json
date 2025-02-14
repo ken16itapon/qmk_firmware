@@ -1,0 +1,10 @@
+{
+    "terminal.integrated.defaultProfile.windows": "QMK_MSYS",
+    "terminal.integrated.profiles.windows": {
+        "QMK MSYS": {
+            "path": "C:\\QMK_MSYS\\usr\\bin\\bash.exe",
+            "args": ["--login", "-i"],
+            "icon": "terminal-bash"
+        }
+    }
+}

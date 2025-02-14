@@ -279,8 +279,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 henkan_pressed_time = record->event.time;
             } else {
                 if (henkan_pressed && (TIMER_DIFF_16(record->event.time, henkan_pressed_time) < TAPPING_TERM)) {
-                    // tap_code(
-                    // KC_LANGUAGE_1);      // Mac用
+                    // tap_code(KC_LANGUAGE_1);      // Mac用
                     tap_code(KC_INTERNATIONAL_4); // Windows用
                     naginata_on();
                 }
