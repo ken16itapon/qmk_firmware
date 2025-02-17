@@ -16,33 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #pragma once
-
-/* key matrix size */
-#define MATRIX_ROWS 10
-#define MATRIX_COLS 7
-
-/*
- * Keyboard Matrix Assignments
- *
- * Change this to how you wired your keyboard
- * COLS: AVR pins used for columns, left to right
- * ROWS: AVR pins used for rows, top to bottom
- * DIODE_DIRECTION: COL2ROW = COL = Anode (+), ROW = Cathode (-, marked on diode)
- *                  ROW2COL = ROW = Anode (+), COL = Cathode (-, marked on diode)
- *
- */
-#define MATRIX_ROW_PINS \
-    { GP4, GP5, GP6, GP7, GP8 }
-
-/* COL2ROW, ROW2COL*/
-#define DIODE_DIRECTION COL2ROW
-
-/* Split hand configration */
-#define SPLIT_HAND_MATRIX_GRID GP6, GP23
-
-/* Custom font */
-#define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
-
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.
@@ -53,11 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* disable print */
 // #define NO_PRINT
-
-/* disable action features */
-// #define NO_ACTION_LAYER
-// #define NO_ACTION_TAPPING
-// #define NO_ACTION_ONESHOT
 
 // Unicode設定の追加
 // #define UNICODE_SELECTED_MODES UNICODE_MODE_WINCOMPOSE, UNICODE_MODE_LINUX, UNICODE_MODE_MACOS
@@ -79,3 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #define TAPPING_TERM 180 // デフォルトは200ms
+
+/* Custom font */
+// #define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
+
