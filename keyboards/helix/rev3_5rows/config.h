@@ -36,18 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Split Configuration */
 #define USE_SERIAL
-// #define SOFT_SERIAL_PIN GP1
-// #define MASTER_LEFT // 左側がマスター固定
-// #define SERIAL_DRIVER SERCOMM
-// #define SERIAL_PIO_USE_PIO0
 #define SERIAL_USART_TX_PIN GP1
-// #define SERIAL_USART_RX_PIN GP1
 #define SERIAL_USART_HALF_DUPLEX
-// #define SERIAL_PIO_USE_PIO0
-// #define SPLIT_WATCHDOG_ENABLE
-// #define SPLIT_CONNECTION_CHECK_TIMEOUT 500
-// #define SPLIT_HAND_PIN GP24    // 未配線のためコメントアウト
-// #define PAL_USE_CALLBACKS TRUE
 
 // スプリット同期設定を追加
 #define SPLIT_TRANSPORT_MIRROR
