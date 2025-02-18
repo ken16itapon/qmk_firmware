@@ -16,21 +16,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #pragma once
-/*
- * Feature disable options
- *  These options are also useful to firmware size reduction.
- */
 
-/* disable debug print */
-// #define NO_DEBUG
+// デバッグ設定（条件付き）
+#ifdef CONSOLE_ENABLE
+#    ifndef DEBUG_MATRIX_SCAN_RATE
+#        define DEBUG_MATRIX_SCAN_RATE
+#    endif
 
-/* disable print */
-// #define NO_PRINT
+#    ifndef SPLIT_DEBUG
+#        define SPLIT_DEBUG
+#    endif
 
-// Unicode設定の追加
-// #define UNICODE_SELECTED_MODES UNICODE_MODE_WINCOMPOSE, UNICODE_MODE_LINUX, UNICODE_MODE_MACOS
-// #define UNICODE_KEY_WINCOMPOSE KC_RALT  // Windows Composeキー
+#    ifndef DEBUG_TRANSPORT
+#        define DEBUG_TRANSPORT
+#    endif
+#endif
 
+// なぎなた式設定
 #define NG_NO_HENSHU
 #define NG_NO_KOYUMEISHI
 #define SHINGETA
@@ -46,9 +48,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #    define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_SOLID_COLOR
 #endif
 
-#define TAPPING_TERM 180 // デフォルトは200ms
+// キーボード設定
+#define TAPPING_TERM 180
 
-/* Custom font */
-// #define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
+// シリアル設定
+#ifndef SERIAL_DEBUG
+#    define SERIAL_DEBUG
+#endif
 
-#define SERIAL_DEBUG
+// RGBライトの設定
+#ifndef RGBLED_NUM
+#    define RGBLED_NUM 6
+#endif
+
+#ifndef RGBLIGHT_LIMIT_VAL
+#    define RGBLIGHT_LIMIT_VAL 255
+#endif
+
+// スキャンマトリックスデバッグ
+#ifdef CONSOLE_ENABLE
+#    ifndef DEBUG_SPLIT_MATRIX
+#        define DEBUG_SPLIT_MATRIX
+#    endif
+#endif

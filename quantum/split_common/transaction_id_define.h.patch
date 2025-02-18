@@ -1,0 +1,18 @@
+#pragma once
+
+// トランザクションIDの基本定義
+#ifndef TRANSACTION_IDS_KB_BASE
+#define TRANSACTION_IDS_KB_BASE 0x01
+#endif
+
+// キーボード固有のトランザクションID
+enum split_transaction_ids {
+    KEYBOARD_SYNC = TRANSACTION_IDS_KB_BASE,
+    LED_STATE_SYNC,
+    MODS_STATE_SYNC,
+    NUM_TOTAL_TRANSACTIONS
+};
+
+// 最大トランザクション数の検証
+_Static_assert((NUM_TOTAL_TRANSACTIONS - TRANSACTION_IDS_KB_BASE) <= (1 << 5),
+              "Max number of usable transactions exceeded");

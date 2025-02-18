@@ -17,10 +17,8 @@
 #include "keymap_japanese.h"
 #include "naginata.h"
 #include "twpair_on_jis.h"
-// #include "raw_hid.h"
-// #include "process_tap_dance.h"
 #include "quantum.h"
-// #include "process_unicode.h"
+#include "split_debug.h" // 追加
 
 // Unicode モード定数の修正
 // #define UNICODE_MODE_WINCOMPOSE UC_WIN
@@ -100,11 +98,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_LOWER] = LAYOUT(
         // ,-----------------------------------------------------.                 ,-----------------------------------------------------.
-             _______, KC_F1, KC_F2, KC_F3, KC_F4, KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_PLUS,
+             _______,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                     KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10, KC_PLUS,
         // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-             _______, KC_HOME, KC_END, KC_UP, KC_DEL, KC_PGUP, _______, _______, _______, KC_LPRN, KC_RPRN, KC_EQL,
+             _______, KC_HOME,  KC_END,   KC_UP,  KC_DEL, KC_PGUP,                   _______, _______, _______, KC_LPRN, KC_RPRN,  KC_EQL,
         // |--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-             _______, _______, KC_LEFT, KC_DOWN, KC_RIGHT, KC_PGDN, _______, _______, _______, KC_LCBR, KC_RCBR, _______,
+             _______, _______, KC_LEFT, KC_DOWN, KC_RIGHT,KC_PGDN,                   _______, _______, _______, KC_LCBR, KC_RCBR, _______,
         // |--------+--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+--------+--------|
              _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_LBRC, KC_RBRC, _______,
         // |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
@@ -185,6 +183,10 @@ static struct {
 } lower_state = {0};
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef CONSOLE_ENABLE
+    monitor_keyboard_state(keycode, record); // キー入力のモニタリング
+#endif
+
     // 他のキー押下検出
     if (record->event.pressed && keycode != LOWER) {
         lower_state.pressed           = false;
@@ -316,6 +318,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
+#ifdef CONSOLE_ENABLE
+    monitor_split_status(); // スプリット状態のモニタリング
+#endif
+
     // BSPCリピート開始条件
     if (lower_state.pressed && lower_state.backspace_sent && !lower_state.bspc_active && !lower_state.other_key_pressed && (timer_elapsed(lower_state.released_time) < TAPPING_TERM)) {
         lower_state.bspc_active = true;
@@ -332,6 +338,10 @@ void matrix_scan_user(void) {
 
 #ifdef RGB_MATRIX_ENABLE
 void keyboard_post_init_user(void) {
+#    ifdef CONSOLE_ENABLE
+    keyboard_post_init_debug(); // デバッグ初期化
+#    endif
+
     rgb_matrix_enable();
     rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
     rgb_matrix_sethsv(HSV_GREEN);
@@ -402,11 +412,13 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 #ifdef ENCODER_ENABLE
 void keyboard_pre_init_user(void) {
+    // エンコーダーのピン定義
     pin_t encoders_pad_a[]       = {GP16};
     pin_t encoders_pad_b[]       = {GP17};
     pin_t encoders_pad_a_right[] = {GP16};
     pin_t encoders_pad_b_right[] = {GP17};
 
+    // ピンの初期化
     for (uint8_t i = 0; i < NUM_ENCODERS; i++) {
         setPinInputHigh(encoders_pad_a[i]);
         setPinInputHigh(encoders_pad_b[i]);

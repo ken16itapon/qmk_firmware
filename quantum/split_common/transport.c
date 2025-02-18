@@ -21,6 +21,22 @@
 #include "transport.h"
 #include "transaction_id_define.h"
 #include "atomic_util.h"
+#include "quantum.h"
+#include "split_util.h"
+
+// スプリット通信の状態管理
+static struct {
+    bool     connected;
+    uint32_t last_sync;
+    uint32_t errors;
+    uint32_t successful_syncs;
+    uint32_t handshake_failures;
+} transport_status = {false, 0, 0, 0, 0};
+
+// この関数はsplit_util.cで定義されているため、ここでは削除
+// bool is_transport_connected(void) {
+//     return transport_status.connected;
+// }
 
 #ifdef USE_I2C
 
@@ -121,10 +137,53 @@ bool transport_execute_transaction(int8_t id, const void *initiator2target_buf, 
 
 #endif // USE_I2C
 
+#ifdef DEBUG_TRANSPORT
+static void update_transport_status(bool success) {
+    if (success) {
+        transport_status.successful_syncs++;
+        transport_status.last_sync = timer_read32();
+    } else {
+        transport_status.errors++;
+        if (!is_transport_connected()) {
+            transport_status.handshake_failures++;
+            // ASCIIのみを使用してデバッグメッセージを出力
+            xprintf("Split sync failed - Error count: %lu\n", transport_status.errors);
+            xprintf("Handshake failures: %lu\n", transport_status.handshake_failures);
+            xprintf("Last successful sync: %lums ago\n", transport_status.last_sync > 0 ? timer_elapsed32(transport_status.last_sync) : 0);
+        }
+    }
+    transport_status.connected = is_transport_connected();
+}
+#endif
+
 bool transport_master(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+#ifdef DEBUG_TRANSPORT
+    bool result = false;
+
+    if (!transport_status.connected) {
+        update_transport_status(false);
+        return false;
+    }
+
+    result = transactions_master(master_matrix, slave_matrix);
+    update_transport_status(result);
+    return result;
+#else
     return transactions_master(master_matrix, slave_matrix);
+#endif
 }
 
 void transport_slave(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+#ifdef SPLIT_DEBUG
+    static uint32_t last_slave_sync = 0;
+    uint32_t        now             = timer_read32();
+
+    if (timer_elapsed32(last_slave_sync) > 1000) {
+        last_slave_sync = now;
+        xprintf("Slave transport debug:\n");
+        xprintf("- Sync interval: %lu ms\n", timer_elapsed32(last_slave_sync));
+    }
+#endif
+
     transactions_slave(master_matrix, slave_matrix);
 }
