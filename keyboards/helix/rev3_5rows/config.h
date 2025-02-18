@@ -35,9 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SPLIT_HAND_MATRIX_GRID GP6, GP23
 
 /* Split Configuration */
-#define USE_SERIAL
+#define SERIAL_DRIVER VENDOR
 #define SERIAL_USART_TX_PIN GP1
-#define SERIAL_USART_HALF_DUPLEX
+#define SERIAL_USART_RX_PIN GP1
 
 // スプリット同期設定を追加
 #define SPLIT_TRANSPORT_MIRROR
@@ -61,9 +61,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 /* OLED Configuration */
-#define OLED_DISPLAY_128X32
-#define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
-#define OLED_TIMEOUT 30000
+// #define OLED_DISPLAY_128X32
+// #define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
+// #define OLED_TIMEOUT 30000
 
 /* RGB LED Configuration */
 #define WS2812_DI_PIN GP0

@@ -51,3 +51,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Custom font */
 // #define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
 
+#define SERIAL_DEBUG
