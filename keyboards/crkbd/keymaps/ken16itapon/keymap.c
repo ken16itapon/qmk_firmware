@@ -317,16 +317,17 @@ bool all_keys_released(void) {
 static uint16_t all_keys_released_time;
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
-    if (keycode != LOWER) {
-      other_key_pressed.lower = true;
-      lower_state.backspace_sent = false;
-    }
-  } else {
-    all_keys_released_time = record->event.time;
-  }
 
   switch (keycode) {
+    case !LOWER:
+    if (record->event.pressed) {
+        if (keycode != LOWER) {
+          other_key_pressed.lower = true;
+          lower_state.backspace_sent = false;
+        }
+      } else {
+        all_keys_released_time = record->event.time;
+      }
     case LOWER:
       if (record->event.pressed) {
         if (timer_elapsed(lower_state.released_time) < TAPPING_TERM) {

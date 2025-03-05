@@ -14,176 +14,117 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
-#include <debug.h>
+ #include <string.h>
+ #include <debug.h>
 
-#include "transactions.h"
-#include "transport.h"
-#include "transaction_id_define.h"
-#include "atomic_util.h"
-#include "quantum.h"
-#include "split_util.h"
+ #include "transactions.h"
+ #include "transport.h"
+ #include "transaction_id_define.h"
+ #include "atomic_util.h"
 
-// スプリット通信の状態管理
-static struct {
-    bool     connected;
-    uint32_t last_sync;
-    uint32_t errors;
-    uint32_t successful_syncs;
-    uint32_t handshake_failures;
-} transport_status = {false, 0, 0, 0, 0};
+ #ifdef USE_I2C
 
-// この関数はsplit_util.cで定義されているため、ここでは削除
-// bool is_transport_connected(void) {
-//     return transport_status.connected;
-// }
+ #    ifndef SLAVE_I2C_TIMEOUT
+ #        define SLAVE_I2C_TIMEOUT 100
+ #    endif // SLAVE_I2C_TIMEOUT
 
-#ifdef USE_I2C
+ #    ifndef SLAVE_I2C_ADDRESS
+ #        define SLAVE_I2C_ADDRESS 0x32
+ #    endif
 
-#    ifndef SLAVE_I2C_TIMEOUT
-#        define SLAVE_I2C_TIMEOUT 100
-#    endif // SLAVE_I2C_TIMEOUT
+ #    include "i2c_master.h"
+ #    include "i2c_slave.h"
 
-#    ifndef SLAVE_I2C_ADDRESS
-#        define SLAVE_I2C_ADDRESS 0x32
-#    endif
+ // Ensure the I2C buffer has enough space
+ _Static_assert(sizeof(split_shared_memory_t) <= I2C_SLAVE_REG_COUNT, "split_shared_memory_t too large for I2C_SLAVE_REG_COUNT");
 
-#    include "i2c_master.h"
-#    include "i2c_slave.h"
+ split_shared_memory_t *const split_shmem = (split_shared_memory_t *)i2c_slave_reg;
 
-// Ensure the I2C buffer has enough space
-_Static_assert(sizeof(split_shared_memory_t) <= I2C_SLAVE_REG_COUNT, "split_shared_memory_t too large for I2C_SLAVE_REG_COUNT");
+ void transport_master_init(void) {
+     i2c_init();
+ }
+ void transport_slave_init(void) {
+     i2c_slave_init(SLAVE_I2C_ADDRESS);
+ }
 
-split_shared_memory_t *const split_shmem = (split_shared_memory_t *)i2c_slave_reg;
+ i2c_status_t transport_trigger_callback(int8_t id) {
+     // If there's no callback, indicate that we were successful
+     if (!split_transaction_table[id].slave_callback) {
+         return I2C_STATUS_SUCCESS;
+     }
 
-void transport_master_init(void) {
-    i2c_init();
-}
-void transport_slave_init(void) {
-    i2c_slave_init(SLAVE_I2C_ADDRESS);
-}
+     // Kick off the "callback executor", now that data has been written to the slave
+     split_shmem->transaction_id     = id;
+     split_transaction_desc_t *trans = &split_transaction_table[I2C_EXECUTE_CALLBACK];
+     return i2c_write_register(SLAVE_I2C_ADDRESS, trans->initiator2target_offset, split_trans_initiator2target_buffer(trans), trans->initiator2target_buffer_size, SLAVE_I2C_TIMEOUT);
+ }
 
-i2c_status_t transport_trigger_callback(int8_t id) {
-    // If there's no callback, indicate that we were successful
-    if (!split_transaction_table[id].slave_callback) {
-        return I2C_STATUS_SUCCESS;
-    }
+ bool transport_execute_transaction(int8_t id, const void *initiator2target_buf, uint16_t initiator2target_length, void *target2initiator_buf, uint16_t target2initiator_length) {
+     i2c_status_t              status;
+     split_transaction_desc_t *trans = &split_transaction_table[id];
+     if (initiator2target_length > 0) {
+         size_t len = trans->initiator2target_buffer_size < initiator2target_length ? trans->initiator2target_buffer_size : initiator2target_length;
+         memcpy(split_trans_initiator2target_buffer(trans), initiator2target_buf, len);
+         if ((status = i2c_write_register(SLAVE_I2C_ADDRESS, trans->initiator2target_offset, split_trans_initiator2target_buffer(trans), len, SLAVE_I2C_TIMEOUT)) < 0) {
+             return false;
+         }
+     }
 
-    // Kick off the "callback executor", now that data has been written to the slave
-    split_shmem->transaction_id     = id;
-    split_transaction_desc_t *trans = &split_transaction_table[I2C_EXECUTE_CALLBACK];
-    return i2c_write_register(SLAVE_I2C_ADDRESS, trans->initiator2target_offset, split_trans_initiator2target_buffer(trans), trans->initiator2target_buffer_size, SLAVE_I2C_TIMEOUT);
-}
+     // If we need to execute a callback on the slave, do so
+     if ((status = transport_trigger_callback(id)) < 0) {
+         return false;
+     }
 
-bool transport_execute_transaction(int8_t id, const void *initiator2target_buf, uint16_t initiator2target_length, void *target2initiator_buf, uint16_t target2initiator_length) {
-    i2c_status_t              status;
-    split_transaction_desc_t *trans = &split_transaction_table[id];
-    if (initiator2target_length > 0) {
-        size_t len = trans->initiator2target_buffer_size < initiator2target_length ? trans->initiator2target_buffer_size : initiator2target_length;
-        memcpy(split_trans_initiator2target_buffer(trans), initiator2target_buf, len);
-        if ((status = i2c_write_register(SLAVE_I2C_ADDRESS, trans->initiator2target_offset, split_trans_initiator2target_buffer(trans), len, SLAVE_I2C_TIMEOUT)) < 0) {
-            return false;
-        }
-    }
+     if (target2initiator_length > 0) {
+         size_t len = trans->target2initiator_buffer_size < target2initiator_length ? trans->target2initiator_buffer_size : target2initiator_length;
+         if ((status = i2c_read_register(SLAVE_I2C_ADDRESS, trans->target2initiator_offset, split_trans_target2initiator_buffer(trans), len, SLAVE_I2C_TIMEOUT)) < 0) {
+             return false;
+         }
+         memcpy(target2initiator_buf, split_trans_target2initiator_buffer(trans), len);
+     }
 
-    // If we need to execute a callback on the slave, do so
-    if ((status = transport_trigger_callback(id)) < 0) {
-        return false;
-    }
+     return true;
+ }
 
-    if (target2initiator_length > 0) {
-        size_t len = trans->target2initiator_buffer_size < target2initiator_length ? trans->target2initiator_buffer_size : target2initiator_length;
-        if ((status = i2c_read_register(SLAVE_I2C_ADDRESS, trans->target2initiator_offset, split_trans_target2initiator_buffer(trans), len, SLAVE_I2C_TIMEOUT)) < 0) {
-            return false;
-        }
-        memcpy(target2initiator_buf, split_trans_target2initiator_buffer(trans), len);
-    }
+ #else // USE_I2C
 
-    return true;
-}
+ #    include "serial.h"
 
-#else // USE_I2C
+ static split_shared_memory_t shared_memory;
+ split_shared_memory_t *const split_shmem = &shared_memory;
 
-#    include "serial.h"
+ void transport_master_init(void) {
+     soft_serial_initiator_init();
+ }
+ void transport_slave_init(void) {
+     soft_serial_target_init();
+ }
 
-static split_shared_memory_t shared_memory;
-split_shared_memory_t *const split_shmem = &shared_memory;
+ bool transport_execute_transaction(int8_t id, const void *initiator2target_buf, uint16_t initiator2target_length, void *target2initiator_buf, uint16_t target2initiator_length) {
+     split_transaction_desc_t *trans = &split_transaction_table[id];
+     if (initiator2target_length > 0) {
+         size_t len = trans->initiator2target_buffer_size < initiator2target_length ? trans->initiator2target_buffer_size : initiator2target_length;
+         memcpy(split_trans_initiator2target_buffer(trans), initiator2target_buf, len);
+     }
 
-void transport_master_init(void) {
-    soft_serial_initiator_init();
-}
-void transport_slave_init(void) {
-    soft_serial_target_init();
-}
+     if (!soft_serial_transaction(id)) {
+         return false;
+     }
 
-bool transport_execute_transaction(int8_t id, const void *initiator2target_buf, uint16_t initiator2target_length, void *target2initiator_buf, uint16_t target2initiator_length) {
-    split_transaction_desc_t *trans = &split_transaction_table[id];
-    if (initiator2target_length > 0) {
-        size_t len = trans->initiator2target_buffer_size < initiator2target_length ? trans->initiator2target_buffer_size : initiator2target_length;
-        memcpy(split_trans_initiator2target_buffer(trans), initiator2target_buf, len);
-    }
+     if (target2initiator_length > 0) {
+         size_t len = trans->target2initiator_buffer_size < target2initiator_length ? trans->target2initiator_buffer_size : target2initiator_length;
+         memcpy(target2initiator_buf, split_trans_target2initiator_buffer(trans), len);
+     }
 
-    if (!soft_serial_transaction(id)) {
-        return false;
-    }
+     return true;
+ }
 
-    if (target2initiator_length > 0) {
-        size_t len = trans->target2initiator_buffer_size < target2initiator_length ? trans->target2initiator_buffer_size : target2initiator_length;
-        memcpy(target2initiator_buf, split_trans_target2initiator_buffer(trans), len);
-    }
+ #endif // USE_I2C
 
-    return true;
-}
+ bool transport_master(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+     return transactions_master(master_matrix, slave_matrix);
+ }
 
-#endif // USE_I2C
-
-#ifdef DEBUG_TRANSPORT
-static void update_transport_status(bool success) {
-    if (success) {
-        transport_status.successful_syncs++;
-        transport_status.last_sync = timer_read32();
-    } else {
-        transport_status.errors++;
-        if (!is_transport_connected()) {
-            transport_status.handshake_failures++;
-            // ASCIIのみを使用してデバッグメッセージを出力
-            xprintf("Split sync failed - Error count: %lu\n", transport_status.errors);
-            xprintf("Handshake failures: %lu\n", transport_status.handshake_failures);
-            xprintf("Last successful sync: %lums ago\n", transport_status.last_sync > 0 ? timer_elapsed32(transport_status.last_sync) : 0);
-        }
-    }
-    transport_status.connected = is_transport_connected();
-}
-#endif
-
-bool transport_master(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
-#ifdef DEBUG_TRANSPORT
-    bool result = false;
-
-    if (!transport_status.connected) {
-        update_transport_status(false);
-        return false;
-    }
-
-    result = transactions_master(master_matrix, slave_matrix);
-    update_transport_status(result);
-    return result;
-#else
-    return transactions_master(master_matrix, slave_matrix);
-#endif
-}
-
-void transport_slave(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
-#ifdef SPLIT_DEBUG
-    static uint32_t last_slave_sync = 0;
-    uint32_t        now             = timer_read32();
-
-    if (timer_elapsed32(last_slave_sync) > 1000) {
-        last_slave_sync = now;
-        xprintf("Slave transport debug:\n");
-        xprintf("- Sync interval: %lu ms\n", timer_elapsed32(last_slave_sync));
-    }
-#endif
-
-    transactions_slave(master_matrix, slave_matrix);
-}
+ void transport_slave(matrix_row_t master_matrix[], matrix_row_t slave_matrix[]) {
+     transactions_slave(master_matrix, slave_matrix);
+ }
