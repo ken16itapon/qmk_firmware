@@ -1,6 +1,4 @@
 UNICODE_ENABLE = yes
-# CONSOLE_ENABLE = yes
-# COMMAND_ENABLE = yes
 
 TAP_DANCE_ENABLE = yes
 
@@ -10,7 +8,7 @@ SRC +=  twpair_on_jis.c
 
 RAW_ENABLE = yes
 
-CONSOLE_ENABLE = yes
-
 RGB_MATRIX_ENABLE = yes
+
+OS_DETECTION_ENABLE = yes
 
