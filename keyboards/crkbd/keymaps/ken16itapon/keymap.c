@@ -53,6 +53,15 @@ static keyboard_os_t current_os_mode = OS_AUTO;
 keyboard_os_t get_current_os(void) { return current_os_mode; }
 #endif
 
+// OS用のグローバル変数を定義
+#ifdef OS_DETECTION_ENABLE
+static os_variant_t global_os_cache;
+#define GET_OS() (global_os_cache = get_current_os())
+#else
+static keyboard_os_t global_os_cache;
+#define GET_OS() (global_os_cache = get_current_os())
+#endif
+
 NGKEYS naginata_keys;
 
 // タップダンスのインデックス定義
@@ -89,7 +98,9 @@ enum custom_keycodes {
     C_BSPC,
     OA_LCTL,
     OA_LWIN,
-    OA_RALT
+    OA_RALT,
+
+    OS_DISP
 };
 // clang-format on
 
@@ -166,9 +177,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_ADJUST] = LAYOUT_split_3x6_3_ex2(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-      QK_BOOT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,MAC_MODE,    XXXXXXX, XXXXXXX, XXXXXXX,   POWER, XXXXXXX, XXXXXXX,  S_CAPS,
+      QK_BOOT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,MAC_MODE,   WIN_MODE, XXXXXXX, XXXXXXX,   POWER, XXXXXXX, XXXXXXX,  S_CAPS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      RM_TOGG, RM_HUEU, RM_SATU, RM_VALU, XXXXXXX, XXXXXXX,AUTO_MODE,  WIN_MODE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,
+      RM_TOGG, RM_HUEU, RM_SATU, RM_VALU, XXXXXXX, XXXXXXX, OS_DISP,  AUTO_MODE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
       RM_NEXT, RM_HUED, RM_SATD, RM_VALD, XXXXXXX, XXXXXXX,                      KC_PSCR, KC_SCRL, KC_PAUS,  KC_INS,  KC_DEL, XXXXXXX,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
@@ -406,23 +417,31 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         set_other_key_pressed();
       } else {
         if (timer_elapsed(ime_state.mhenkan_pressed_time) < TAPPING_TERM) {
-          switch (get_current_os()) {
-            case OS_MACOS:
+          GET_OS();
+          switch (global_os_cache) {
+            case OS_MACOS:  // MacOS
               tap_code(KC_LANGUAGE_2);
-            case OS_WINDOWS:
+              break;
+            case OS_WINDOWS:  // Windows
               tap_code(KC_INTERNATIONAL_5);
-            default:
+              break;
+            default:  // Linux
               tap_code(KC_INTERNATIONAL_5);
+              break;
           }
           naginata_off();
         }
         ime_state.mhenkan_pressed = false;
         ime_state.mods_active = ime_state.henkan_pressed ? true : false;
-        switch (get_current_os()) {
-          case OS_MACOS:
+
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
             unregister_mods(MOD_BIT(MC_LALT));
-          default:
+            break;
+          default:  // Windows/Linux
             unregister_mods(MOD_BIT(KC_LALT));
+            break;
         }
       }
       return false;
@@ -435,24 +454,31 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         set_other_key_pressed();
       } else {
         if (timer_elapsed(ime_state.henkan_pressed_time) < TAPPING_TERM) {
-          switch (get_current_os()) {
-            case OS_MACOS:
+          GET_OS();
+          switch (global_os_cache) {
+            case OS_MACOS:  // MacOS
               tap_code(KC_LANGUAGE_1);
-            case OS_WINDOWS:
+              break;
+            case OS_WINDOWS:  // Windows
               tap_code(KC_INTERNATIONAL_4);
-            default:
+              break;
+            default:  // Linux
               tap_code(KC_INTERNATIONAL_4);
+              break;
           }
           naginata_on();
         }
         ime_state.henkan_pressed = false;
         ime_state.mods_active = ime_state.mhenkan_pressed ? true : false;
 
-        switch (get_current_os()) {
-          case OS_MACOS:
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
             unregister_mods(MOD_BIT(MC_LWIN));
-          default:
+            break;
+          default:  // Windows/Linux
             unregister_mods(MOD_BIT(KC_LWIN));
+            break;
         }
       }
       return false;
@@ -510,26 +536,27 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case C_SPACE:
       if (record->event.pressed) {
         c_space_state.pressed_time = record->event.time;
-        switch (get_current_os()) {
+        GET_OS();
+        switch (global_os_cache) {
           case OS_MACOS:  // MacOS
             register_mods(MOD_BIT(MC_LCTL));
-            set_other_key_pressed();
             break;
-          default:  // Windows, Linux
+          default:  // Windows/Linux
             register_mods(MOD_BIT(KC_LCTL));
-            set_other_key_pressed();
             break;
         }
+        set_other_key_pressed();
       } else {
         if (timer_elapsed(c_space_state.pressed_time) < TAPPING_TERM) {
           tap_code(KC_SPACE);
           set_other_key_pressed();
         } else {
-          switch (get_current_os()) {
+          GET_OS();
+          switch (global_os_cache) {
             case OS_MACOS:  // MacOS
               unregister_mods(MOD_BIT(MC_LCTL));
               break;
-            default:  // Windows, Linux
+            default:  // Windows/Linux
               unregister_mods(MOD_BIT(KC_LCTL));
               break;
           }
@@ -540,104 +567,156 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case C_BSPC:
       if (record->event.pressed) {
         c_bspc_state.pressed_time = record->event.time;
-        switch (get_current_os()) {
+        GET_OS();
+        switch (global_os_cache) {
           case OS_MACOS:  // MacOS
             register_mods(MOD_BIT(MC_LCTL));
-            set_other_key_pressed();
             break;
-          default:  // Windows, Linux
+          default:  // Windows/Linux
             register_mods(MOD_BIT(KC_LCTL));
-            set_other_key_pressed();
             break;
         }
-
+        set_other_key_pressed();
+        return false;
       } else {
         if (timer_elapsed(c_space_state.pressed_time) < TAPPING_TERM) {
           tap_code(KC_BSPC);
           set_other_key_pressed();
         } else {
-          switch (get_current_os()) {
+          GET_OS();
+          switch (global_os_cache) {
             case OS_MACOS:  // MacOS
               unregister_mods(MOD_BIT(MC_LCTL));
-            default:  // Windows, Linux
+              break;
+            default:  // Windows/Linux
               unregister_mods(MOD_BIT(KC_LCTL));
+              break;
           }
         }
+        return false;
       }
-      return false;
 
     case OA_LCTL:
       if (record->event.pressed) {
-        switch (get_current_os()) {
+        GET_OS();
+        switch (global_os_cache) {
           case OS_MACOS:  // MacOS
             register_mods(MOD_BIT(MC_LCTL));
-            set_other_key_pressed();
             break;
-          default:  // Windows, Linux
+          default:  // Windows/Linux
             register_mods(MOD_BIT(KC_LCTL));
-            set_other_key_pressed();
             break;
         }
         set_other_key_pressed();
+        return false;
+        
       } else {
-        switch (get_current_os()) {
+        GET_OS();
+        switch (global_os_cache) {
           case OS_MACOS:  // MacOS
             unregister_mods(MOD_BIT(MC_LCTL));
             break;
-          default:  // Windows, Linux
+          default:  // Windows/Linux
             unregister_mods(MOD_BIT(KC_LCTL));
             break;
         }
+        return false;
       }
-      return false;
 
     case OA_LWIN:
       if (record->event.pressed) {
-        switch (get_current_os()) {
-          case OS_MACOS:
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
             register_mods(MOD_BIT(MC_LWIN));
-            set_other_key_pressed();
             break;
-          default:
+          default:  // Windows/Linux
             register_mods(MOD_BIT(KC_LWIN));
-            set_other_key_pressed();
             break;
         }
         set_other_key_pressed();
+        return false;
       } else {
-        switch (get_current_os()) {
-          case OS_MACOS:
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
             unregister_mods(MOD_BIT(MC_LWIN));
             break;
-          default:
+          default:  // Windows/Linux
             unregister_mods(MOD_BIT(KC_LWIN));
             break;
         }
+        return false;
       }
-      return false;
 
     case OA_RALT:
+
       if (record->event.pressed) {
-        switch (get_current_os()) {
-          case OS_MACOS:
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
             register_mods(MOD_BIT(MC_RALT));
-            set_other_key_pressed();
             break;
-          default:
+          default:  // Windows/Linux
             register_mods(MOD_BIT(KC_RALT));
-            set_other_key_pressed();
             break;
         }
-
+        set_other_key_pressed();
+        return false;
       } else {
-        switch (get_current_os()) {
-          case OS_MACOS:
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
             unregister_mods(MOD_BIT(MC_RALT));
             break;
-          default:
+          default:  // Windows/Linux
             unregister_mods(MOD_BIT(KC_RALT));
             break;
         }
+        return false;
+      }
+
+    case OS_DISP:
+      if (record->event.pressed) {
+#ifdef OS_DETECTION_ENABLE
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_UNSURE:
+            SEND_STRING("OS Mode: Auto Detect");
+            break;
+          case OS_LINUX:
+            SEND_STRING("OS Mode: Linux");
+            break;
+          case OS_WINDOWS:
+            SEND_STRING("OS Mode: Windows");
+            break;
+          case OS_MACOS:
+            SEND_STRING("OS Mode: MacOS");
+            break;
+          default:
+            SEND_STRING("OS Mode: Unknown");
+            break;
+        }
+#else
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_AUTO:
+            SEND_STRING("OS Mode: Auto");
+            break;
+          case OS_WINDOWS:
+            SEND_STRING("OS Mode: Windows");
+            break;
+          case OS_MACOS:
+            SEND_STRING("OS Mode: macOS");
+            break;
+          case OS_LINUX:
+            SEND_STRING("OS Mode: Linux");
+            break;
+          default:
+            SEND_STRING("OS Mode: Unknown");
+            break;
+        }
+#endif
       }
       return false;
 
@@ -740,21 +819,20 @@ static bool mods_active = false;
 void cstab_finished(tap_dance_state_t *state, void *user_data) {
   if (state->count == 1) {
     if (state->interrupted || !state->pressed) {
-      // 単体タップ: TAB
       register_code(KC_TAB);
     } else {
-      // 他のキーと同時押し: CTRL+SHIFT
       mods_active = true;
-
-      switch (get_current_os()) {
+      GET_OS();
+      switch (global_os_cache) {
         case OS_MACOS:  // MacOS
           register_mods(MOD_BIT(MC_LCTL) | MOD_BIT(KC_LSFT));
-        default:  // Windows, Linux
+          break;
+        default:  // Windows/Linux
           register_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+          break;
       }
     }
   } else if (state->count == 2) {
-    // ダブルタップ: ESC
     register_code(KC_ESC);
   }
 }
@@ -765,24 +843,30 @@ void cstab_reset(tap_dance_state_t *state, void *user_data) {
     if (state->interrupted || !state->pressed) {
       unregister_code(KC_TAB);
     } else if (mods_active) {
-      switch (get_current_os()) {
+      GET_OS();
+      switch (global_os_cache) {
         case OS_MACOS:  // MacOS
           unregister_mods(MOD_BIT(MC_LCTL) | MOD_BIT(KC_LSFT));
-        default:  // Windows, Linux
+          break;
+        default:  // Windows/Linux
           unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+          break;
       }
       mods_active = false;
     }
   } else if (state->count == 2) {
     unregister_code(KC_ESC);
   }
-  // 安全のため、必ず修飾キーをクリア
+
   if (mods_active) {
-    switch (get_current_os()) {
+    GET_OS();
+    switch (global_os_cache) {
       case OS_MACOS:  // MacOS
         unregister_mods(MOD_BIT(MC_LCTL) | MOD_BIT(KC_LSFT));
-      default:  // Windows, Linux
+        break;
+      default:  // Windows/Linux
         unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+        break;
     }
     mods_active = false;
   }
