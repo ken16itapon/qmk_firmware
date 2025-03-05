@@ -609,7 +609,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
         set_other_key_pressed();
         return false;
-        
+
       } else {
         GET_OS();
         switch (global_os_cache) {
