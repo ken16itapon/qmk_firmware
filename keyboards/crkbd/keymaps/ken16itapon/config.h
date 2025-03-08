@@ -25,6 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // #define QUICK_TAP_TERM 0
 // #define TAPPING_TERM 100
 
+// 以下の設定を確認/追加してください
+#undef RGB_LIGHT_ENABLE
+
+#define RGB_MATRIX_ENABLE
+
 #ifdef RGB_MATRIX_ENABLE
 #undef RGB_MATRIX_MAXIMUM_BRIGHTNESS
 #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 150
@@ -34,9 +39,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RGB_MATRIX_SPD_STEP 10
 #define RGB_MATRIX_STARTUP_VAL RGB_MATRIX_MAXIMUM_BRIGHTNESS
 #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_SOLID_COLOR
+#define RGB_MATRIX_FRAMEBUFFER_EFFECTS
+#define RGB_MATRIX_KEYPRESSES
 #endif
 
-#define TAPPING_TERM 200  // �f�t�H���g��200ms
+#define TAPPING_TERM 200  // �f�t�H���g��200ms
 
 #define NG_NO_HENSHU
 #define NG_NO_KOYUMEISHI
+
+// Boot Magic Lightの有効化
+#define BOOTMAGIC_LITE_ROW 0
+#define BOOTMAGIC_LITE_COLUMN 0  // 左上のキー（通常はTABキー）
+
+// オプション：EEPROMへの書き込み回数を減らす設定
+#define BOOTMAGIC_LITE_EEPROM_BLOCK_COUNT 4
+
+// LEDの数を正しく設定
+#define RGBLED_NUM 54        // Corne用（通常は27個×2）
+#define DRIVER_LED_TOTAL 54  // Corneの場合

@@ -126,9 +126,9 @@ enum custom_keycodes {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3_ex2(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-       CS_TAB,    KC_Q,    KC_W,    KC_F,    KC_P,    KC_G,  TENKEY,     TENKEY,    KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN, KC_MINS,
+       CS_TAB,    KC_Q,    KC_W,    KC_F,    KC_P,    KC_G, COPILOT,     TENKEY,    KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN, KC_MINS,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
-       C_BSPC,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D, COPILOT,     KC_EQL,    KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
+       C_BSPC,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D, XXXXXXX,     KC_EQL,    KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
         S_ESC,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
@@ -177,7 +177,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_ADJUST] = LAYOUT_split_3x6_3_ex2(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-      QK_BOOT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,MAC_MODE,   WIN_MODE, XXXXXXX, XXXXXXX,   POWER, XXXXXXX, XXXXXXX,  S_CAPS,
+      QK_BOOT,  EE_CLR, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,MAC_MODE,   WIN_MODE, XXXXXXX, XXXXXXX,   POWER, XXXXXXX, XXXXXXX,  S_CAPS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
       RM_TOGG, RM_HUEU, RM_SATU, RM_VALU, XXXXXXX, XXXXXXX, OS_DISP,  AUTO_MODE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
@@ -274,34 +274,43 @@ static struct {
 
 static struct {
   uint16_t pressed_time;
-} c_space_state = {0};
+  uint16_t released_time; // リリース時間を追加
+  bool bspc_active;       // リピート状態フラグ
+  bool backspace_sent;    // バックスペースが送信されたフラグ
+  bool pressed;           // キーが押されているかフラグ
+} c_bspc_state = {0};
 
 static struct {
   uint16_t pressed_time;
-} c_bspc_state = {0};
+} c_space_state = {0};
 
 static struct {
   bool lower;
   bool raise;
+  bool any;
 } other_key_pressed = {0};
 
 void other_key_pressed_except(bool *except) {
   if (&other_key_pressed.lower != except) {
     other_key_pressed.lower = true;
+    other_key_pressed.any = true;
   }
   if (&other_key_pressed.raise != except) {
     other_key_pressed.raise = true;
+    other_key_pressed.any = true;
   }
 }
 
 void reset_other_key_pressed(void) {
   other_key_pressed.lower = false;
   other_key_pressed.raise = false;
+  other_key_pressed.any = false;
 }
 
 void set_other_key_pressed(void) {
   other_key_pressed.lower = true;
   other_key_pressed.raise = true;
+  other_key_pressed.any = true;
 }
 
 bool all_keys_released(void) {
@@ -316,20 +325,44 @@ bool all_keys_released(void) {
 
 static uint16_t all_keys_released_time;
 
+// CTRLキーが現在押されているか確認するヘルパー関数
+bool is_control_pressed(void) {
+  GET_OS();
+  switch (global_os_cache) {
+    case OS_MACOS:  // MacOS
+      return (get_mods() & MOD_BIT(MC_LCTL)) || (get_mods() & MOD_BIT(MC_RCTL));
+    default:  // Windows/Linux
+      return (get_mods() & MOD_BIT(KC_LCTL)) || (get_mods() & MOD_BIT(KC_RCTL));
+  }
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  // 全キー共通の前処理
+  if (record->event.pressed) {
+
+    // LOWERでもRAISEでもない通常キーが押された場合
+    if (keycode != LOWER && keycode != RAISE) {
+      set_other_key_pressed(); // 両方のフラグをセット
+    } else if (keycode == LOWER) {
+      set_other_key_pressed_exept(&other_key_pressed.lower);
+    } else if (keycode == RAISE) {
+      set_other_key_pressed_exept(&other_key_pressed.raise);
+    }
+
+  } else {
+    if (all_keys_released()) {
+      all_keys_released_time = record->event.time;
+    }
+  }
 
   switch (keycode) {
-    case !LOWER:
-    if (record->event.pressed) {
-        if (keycode != LOWER) {
-          other_key_pressed.lower = true;
-          lower_state.backspace_sent = false;
-        }
-      } else {
-        all_keys_released_time = record->event.time;
-      }
     case LOWER:
       if (record->event.pressed) {
+        // 高速タイピング対応: キーの状態をリセット
+        if (timer_elapsed(all_keys_released_time) < TAPPING_TERM) {
+          reset_other_key_pressed();
+        }
+
         if (timer_elapsed(lower_state.released_time) < TAPPING_TERM) {
           lower_state.rapid_press = true;  // 連打
         } else {
@@ -344,7 +377,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         layer_on(_LOWER);
         update_tri_layer(_LOWER, _RAISE, _ADJUST);
       } else {
-        // 単打判定（他のキーが押されていない && TAPPING_TERM以内）
+        // 単打判定の修正: 高速タイピングでも単打を許容
         if (timer_elapsed(lower_state.pressed_time) < TAPPING_TERM &&
             !other_key_pressed.lower &&
             !lower_state.rapid_press) {  // 連打でない場合のみBSPC発行
@@ -367,6 +400,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     case RAISE:
       if (record->event.pressed) {
+        // 高速タイピング対応: キーの状態をリセット
+        if (timer_elapsed(all_keys_released_time) < TAPPING_TERM) {
+          reset_other_key_pressed();
+        }
+
         if (timer_elapsed(raise_state.released_time) < TAPPING_TERM) {
           raise_state.rapid_press = true;  // 連打
         } else {
@@ -380,14 +418,27 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
         layer_on(_RAISE);
         update_tri_layer(_LOWER, _RAISE, _ADJUST);
+
+        // CTRLキーが押されている場合は、即座にSPACEも押下してCTRL+SPACEにする
+        if (is_control_pressed()) {
+          register_code(KC_SPACE);
+        }
       } else {
-        // 単打判定（他のキーが押されていない && TAPPING_TERM以内）
+        // 単打判定の修正: 高速タイピングでも単打を許容
         if (timer_elapsed(raise_state.pressed_time) < TAPPING_TERM &&
-            !other_key_pressed.raise &&
+            !other_key_pressed.raise < TAPPING_TERM &&
             !raise_state.rapid_press) {  // 連打でない場合のみSPC発行
-          tap_code(KC_SPC);
-          raise_state.space_sent = true;
-          raise_state.released_time = record->event.time;
+          // CTRLが押されていない場合のみスペース単打を発行
+          if (!is_control_pressed()) {
+            tap_code(KC_SPACE);
+            raise_state.space_sent = true;
+            raise_state.released_time = record->event.time;
+          }
+        }
+
+        // CTRLが押されている場合はスペースキーを解放
+        if (is_control_pressed()) {
+          unregister_code(KC_SPACE);
         }
 
         if (raise_state.spc_active) {
@@ -415,9 +466,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         ime_state.mods_active = true;
         ime_state.mhenkan_pressed = true;
         ime_state.mhenkan_pressed_time = record->event.time;
-        set_other_key_pressed();
+
+        // 修飾キーを登録（押したときに登録）
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
+            register_mods(MOD_BIT(MC_LALT));
+            break;
+          default:  // Windows/Linux
+            register_mods(MOD_BIT(KC_LALT));
+            break;
+        }
       } else {
-        if (timer_elapsed(ime_state.mhenkan_pressed_time) < TAPPING_TERM) {
+        if (timer_elapsed(ime_state.mhenkan_pressed_time) < TAPPING_TERM &&
+            !other_key_pressed.lower && !other_key_pressed.raise) {
+          // 単打時の処理（他のキーが押されていない場合のみ）
           GET_OS();
           switch (global_os_cache) {
             case OS_MACOS:  // MacOS
@@ -432,6 +495,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
           }
           naginata_off();
         }
+
+        // 修飾キーを解除
         ime_state.mhenkan_pressed = false;
         ime_state.mods_active = ime_state.henkan_pressed ? true : false;
 
@@ -452,9 +517,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         ime_state.mods_active = true;
         ime_state.henkan_pressed = true;
         ime_state.henkan_pressed_time = record->event.time;
-        set_other_key_pressed();
+
+        // 修飾キーを登録（押したときに登録）
+        GET_OS();
+        switch (global_os_cache) {
+          case OS_MACOS:  // MacOS
+            register_mods(MOD_BIT(MC_RWIN));
+            break;
+          default:  // Windows/Linux
+            register_mods(MOD_BIT(KC_RWIN));
+            break;
+        }
       } else {
-        if (timer_elapsed(ime_state.henkan_pressed_time) < TAPPING_TERM) {
+        if (timer_elapsed(ime_state.henkan_pressed_time) < TAPPING_TERM &&
+        !other_key_pressed.lower && !other_key_pressed.raise) {
           GET_OS();
           switch (global_os_cache) {
             case OS_MACOS:  // MacOS
@@ -481,6 +557,19 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             unregister_mods(MOD_BIT(KC_LWIN));
             break;
         }
+            // 修飾キーを解除
+    ime_state.henkan_pressed = false;
+    ime_state.mods_active = ime_state.mhenkan_pressed ? true : false;
+
+    GET_OS();
+    switch (global_os_cache) {
+      case OS_MACOS:  // MacOS
+        unregister_mods(MOD_BIT(MC_LWIN));
+        break;
+      default:  // Windows/Linux
+        unregister_mods(MOD_BIT(KC_RWIN));
+        break;
+    }
       }
       return false;
 
@@ -521,14 +610,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 #else
     case MAC_MODE:
       if (record->event.pressed) {
-        current_os_mode = OS_MACOS;  // 自前定義のOS_MACOS
+        current_os_mode = OS_MACOS;  // 自前定義のOS_MACOSを使用
         set_other_key_pressed();
       }
       return false;
 
     case WIN_MODE:
       if (record->event.pressed) {
-        current_os_mode = OS_WINDOWS;  // 自前定義のOS_WINDOWS
+        current_os_mode = OS_WINDOWS;  // 自前定義のOS_WINDOWSを使用
         set_other_key_pressed();
       }
       return false;
@@ -567,7 +656,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     case C_BSPC:
       if (record->event.pressed) {
+        c_bspc_state.pressed = true;
         c_bspc_state.pressed_time = record->event.time;
+        c_bspc_state.bspc_active = false;
         GET_OS();
         switch (global_os_cache) {
           case OS_MACOS:  // MacOS
@@ -580,10 +671,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         set_other_key_pressed();
         return false;
       } else {
-        if (timer_elapsed(c_space_state.pressed_time) < TAPPING_TERM) {
+        // キーを離した時の処理
+        if (timer_elapsed(c_bspc_state.pressed_time) < TAPPING_TERM) {
+          // タップした場合はバックスペース入力
           tap_code(KC_BSPC);
-          set_other_key_pressed();
+          c_bspc_state.backspace_sent = true;
+          c_bspc_state.released_time = record->event.time;
         } else {
+          // 長押しの場合は修飾キーを解除
           GET_OS();
           switch (global_os_cache) {
             case OS_MACOS:  // MacOS
@@ -594,6 +689,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
               break;
           }
         }
+        c_bspc_state.pressed = false;
         return false;
       }
 
@@ -726,9 +822,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         // 修飾キーの処理
         if (ime_state.mods_active) {
           if (ime_state.henkan_pressed) {
-            register_mods(MOD_BIT(KC_LGUI));
+            register_mods(MOD_BIT(KC_RWIN));
             tap_code(keycode);
-            unregister_mods(MOD_BIT(KC_LGUI));
+            unregister_mods(MOD_BIT(KC_RWIN));
           }
           if (ime_state.mhenkan_pressed) {
             register_mods(MOD_BIT(KC_LALT));
@@ -767,6 +863,21 @@ void matrix_scan_user(void) {
     lower_state.bspc_active = false;
   }
 
+  // C_BSPCリピート開始条件 - ここに追加
+  if (c_bspc_state.pressed && c_bspc_state.backspace_sent &&
+      !c_bspc_state.bspc_active &&
+      (timer_elapsed(c_bspc_state.released_time) < TAPPING_TERM)) {
+    c_bspc_state.bspc_active = true;
+    register_code(KC_BSPC);
+    c_bspc_state.backspace_sent = false;
+  }
+
+  // C_BSPCリピート終了条件 - ここに追加
+  if (!c_bspc_state.pressed && c_bspc_state.bspc_active) {
+    unregister_code(KC_BSPC);
+    c_bspc_state.bspc_active = false;
+  }
+
   // SPCリピート開始条件
   if (raise_state.pressed && raise_state.space_sent &&
       !raise_state.spc_active && !other_key_pressed.raise &&
@@ -784,17 +895,23 @@ void matrix_scan_user(void) {
   }
 
   // 修飾キーのクリーンアップ
-  if (all_keys_released() && all_keys_released_time > TAPPING_TERM) {
+  if (all_keys_released() && (timer_elapsed(all_keys_released_time) > TAPPING_TERM)) {
     lower_state.pressed = false;
     raise_state.pressed = false;
     ime_state.henkan_pressed = false;
     ime_state.mhenkan_pressed = false;
     ime_state.mods_active = false;
     reset_other_key_pressed();
+
+    // 修飾キーのクリーンアップ修正
     unregister_mods(MOD_BIT(KC_LALT));
-    unregister_mods(MOD_BIT(KC_LGUI));
-    unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
-  } else {
+    unregister_mods(MOD_BIT(KC_LWIN));
+    unregister_mods(MOD_BIT(KC_LCTL));
+    unregister_mods(MOD_BIT(KC_LSFT));
+    unregister_mods(MOD_BIT(KC_RALT));
+    unregister_mods(MOD_BIT(KC_RWIN));
+    unregister_mods(MOD_BIT(KC_RCTL));
+    unregister_mods(MOD_BIT(KC_RSFT));
   }
 }
 
@@ -883,10 +1000,24 @@ tap_dance_action_t tap_dance_actions[] = {
                       }},
 };
 
+// keyboard_post_init_user関数を修正
 void keyboard_post_init_user(void) {
+  // デバッグモードを有効化
+  debug_enable = true;
+  debug_matrix = true;
+
+  // RGB初期化
   rgb_matrix_enable();
   rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
   rgb_matrix_sethsv(HSV_GREEN);
+
+  // 最大輝度を設定（LEDが多すぎると電力不足になることがある）
+  rgb_matrix_set_speed(128);  // 中程度の速度
+  rgb_matrix_set_color_all(0, 255, 0);  // 緑色に設定（全LEDを点灯）
+
+  // デバッグ情報の出力
+  dprintf("RGB Matrix Status: %d\n", rgb_matrix_is_enabled());
+  dprintf("LED Config: %d LEDs, Mode: %d\n", DRIVER_LED_TOTAL, rgb_matrix_get_mode());
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
