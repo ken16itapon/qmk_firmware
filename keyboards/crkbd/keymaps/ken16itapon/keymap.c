@@ -15,112 +15,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include QMK_KEYBOARD_H
-#include "keymap_japanese.h"
-#include "naginata.h"
-#include "process_tap_dance.h"
-#include "raw_hid.h"
-#include "twpair_on_jis.h"
+#include QMK_KEYBOARD_H  // 最初に基本QMKヘッダー
+#include "keymap.h"      // カスタムキーコード、レイヤー定義
 
-#define USE_MANUAL_OS_DETECTION  // 手動OS検出を有効化
+#include "key_handlers.h"
+#include "os_specific.h"    // OS関連の関数を使うために追加
+#include "state_manager.h"  // is_modifier関数を使うために追加
 
-// OSの状態を管理する変数
-#ifdef OS_DETECTION_ENABLE
-#include "os_detection.h"
-// 現在のOS状態
-static os_variant_t current_os_mode = OS_UNSURE;
-
-// OSの種類を取得する関数
-os_variant_t get_current_os(void) {
-  if (current_os_mode == OS_UNSURE) {
-    return detected_host_os();
-  }
-  return current_os_mode;
-}
-#else
-// 自前のOS定義（OS_DETECTION_ENABLEがない場合のみ）
-typedef enum {
-  OS_AUTO = 0,  // OS検出機能に任せる
-  OS_WINDOWS,   // Windows強制モード
-  OS_MACOS,     // macOS強制モード
-  OS_LINUX      // Linux強制モード
-} keyboard_os_t;
-
-// 現在のOS状態（OS_DETECTION_ENABLEがない場合のみ定義）
-static keyboard_os_t current_os_mode = OS_AUTO;
-
-// OSの種類を取得する関数
-keyboard_os_t get_current_os(void) { return current_os_mode; }
-#endif
-
-// OS用のグローバル変数を定義
-#ifdef OS_DETECTION_ENABLE
-static os_variant_t global_os_cache;
-#define GET_OS() (global_os_cache = get_current_os())
-#else
-static keyboard_os_t global_os_cache;
-#define GET_OS() (global_os_cache = get_current_os())
-#endif
-
-NGKEYS naginata_keys;
-
-// タップダンスのインデックス定義
 enum {
   TD_CSTAB = 0,
 };
-
-// clang-format off
-// Defines names for use in layer keycodes and the keymap
-enum layer_names {
-    _BASE = 0,
-    _NAGINATA,
-    _LOWER,
-    _RAISE,
-    _ADJUST,
-    _10KEY
-};
-
-// Defines the keycodes used by our macros in process_record_user
-enum custom_keycodes {
-    MHENKAN = NG_SAFE_RANGE,
-    HENKAN,
-    LOWER,
-    RAISE,
-    ADJUST,
-// OS切り替え
-    AUTO_MODE,
-    MAC_MODE,
-    WIN_MODE,
-    LINUX_MODE,
-// OS独立定義 OS-agnostic definition
-    C_SPACE,
-    CS_TAB,
-    C_BSPC,
-    OA_LCTL,
-    OA_LWIN,
-    OA_RALT,
-
-    OS_DISP
-};
-// clang-format on
-
-#define S_ENTER SFT_T(KC_ENT)
-// #define C_SPACE CTL_T(KC_SPACE)
-#define CS_TAB TD(TD_CSTAB)  // 既存のCS_TABマクロを上書き
-// #define C_BSPC CTL_T(KC_BSPC)
-#define S_ESC SFT_T(KC_ESC)
-#define COPILOT LSG(KC_F23)
-#define POWER KC_KB_POWER
-#define S_CAPS LSFT(KC_CAPS)
-#define TENKEY TG(_10KEY)
-
-// OSによって修飾キーを変更
-#define MC_LCTL KC_LCMD
-#define MC_LWIN KC_LOPT
-#define MC_LALT KC_LCTL
-#define MC_RCTL KC_RCMD
-#define MC_RWIN KC_ROPT
-#define MC_RALT KC_RCTL
+#define CS_TAB TD(TD_CSTAB)
 
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -132,7 +37,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
         S_ESC,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          MHENKAN,   LOWER, C_SPACE,    S_ENTER,   RAISE,  HENKAN
+                                          MHENKAN,   LOWER,   C_SPC,    S_ENTER,   RAISE,  HENKAN
                                       //`--------------------------'  `--------------------------'
 
   ),
@@ -200,757 +105,98 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   )
 };
-// clang-format on
+
 
 #ifdef ENCODER_MAP_ENABLE
 const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][NUM_DIRECTIONS] = {
-    [0] =
-        {
-            ENCODER_CCW_CW(KC_VOLD, KC_VOLU),
-            ENCODER_CCW_CW(KC_MPRV, KC_MNXT),
-            ENCODER_CCW_CW(RM_VALD, RM_VALU),
-            ENCODER_CCW_CW(KC_RGHT, KC_LEFT),
-        },
-    [1] =
-        {
-            ENCODER_CCW_CW(KC_VOLD, KC_VOLU),
-            ENCODER_CCW_CW(KC_MPRV, KC_MNXT),
-            ENCODER_CCW_CW(RM_VALD, RM_VALU),
-            ENCODER_CCW_CW(KC_RGHT, KC_LEFT),
-        },
-    [2] =
-        {
-            ENCODER_CCW_CW(KC_VOLD, KC_VOLU),
-            ENCODER_CCW_CW(KC_MPRV, KC_MNXT),
-            ENCODER_CCW_CW(RM_VALD, RM_VALU),
-            ENCODER_CCW_CW(KC_RGHT, KC_LEFT),
-        },
-    [3] =
-        {
-            ENCODER_CCW_CW(KC_VOLD, KC_VOLU),
-            ENCODER_CCW_CW(KC_MPRV, KC_MNXT),
-            ENCODER_CCW_CW(RM_VALD, RM_VALU),
-            ENCODER_CCW_CW(KC_RGHT, KC_LEFT),
-        },
+    [0] = { ENCODER_CCW_CW(KC_VOLD, KC_VOLU), ENCODER_CCW_CW(KC_MPRV, KC_MNXT), ENCODER_CCW_CW(RM_VALD, RM_VALU), ENCODER_CCW_CW(KC_RGHT, KC_LEFT), },
+    [1] = { ENCODER_CCW_CW(KC_VOLD, KC_VOLU), ENCODER_CCW_CW(KC_MPRV, KC_MNXT), ENCODER_CCW_CW(RM_VALD, RM_VALU), ENCODER_CCW_CW(KC_RGHT, KC_LEFT), },
+    [2] = { ENCODER_CCW_CW(KC_VOLD, KC_VOLU), ENCODER_CCW_CW(KC_MPRV, KC_MNXT), ENCODER_CCW_CW(RM_VALD, RM_VALU), ENCODER_CCW_CW(KC_RGHT, KC_LEFT), },
+    [3] = { ENCODER_CCW_CW(KC_VOLD, KC_VOLU), ENCODER_CCW_CW(KC_MPRV, KC_MNXT), ENCODER_CCW_CW(RM_VALD, RM_VALU), ENCODER_CCW_CW(KC_RGHT, KC_LEFT), },
 };
 #endif
+// clang-format on
 
 void matrix_init_user(void) {
   // 薙刀式
-
   set_naginata(_NAGINATA);
-  // 薙刀式
-}
 
-// 状態管理の構造体を拡張
-static struct {
-  bool pressed;
-  uint16_t pressed_time;
-  uint16_t released_time;
-  bool bspc_active;
-  bool backspace_sent;
-  bool rapid_press;
-  bool mods_active;  // 修飾キーの状態管理を追加
-} lower_state = {0};
+  // EEPROMから設定を読み込む
+  uint32_t user_config = eeconfig_read_user();
+  global_os_cache = (uint8_t)(user_config & 0xFF);
 
-static struct {
-  bool pressed;
-  uint16_t pressed_time;
-  uint16_t released_time;
-  bool spc_active;
-  bool space_sent;
-  bool rapid_press;
-  bool mods_active;  // 修飾キーの状態管理を追加
-} raise_state = {0};
-
-// henkan/mhenkanの状態管理を構造体化
-static struct {
-  bool henkan_pressed;
-  uint16_t henkan_pressed_time;
-  bool mhenkan_pressed;
-  uint16_t mhenkan_pressed_time;
-  bool mods_active;  // 修飾キーの状態管理
-} ime_state = {0};
-
-static struct {
-  uint16_t pressed_time;
-  uint16_t released_time; // リリース時間を追加
-  bool bspc_active;       // リピート状態フラグ
-  bool backspace_sent;    // バックスペースが送信されたフラグ
-  bool pressed;           // キーが押されているかフラグ
-} c_bspc_state = {0};
-
-static struct {
-  uint16_t pressed_time;
-} c_space_state = {0};
-
-static struct {
-  bool lower;
-  bool raise;
-  bool any;
-} other_key_pressed = {0};
-
-void other_key_pressed_except(bool *except) {
-  if (&other_key_pressed.lower != except) {
-    other_key_pressed.lower = true;
-    other_key_pressed.any = true;
-  }
-  if (&other_key_pressed.raise != except) {
-    other_key_pressed.raise = true;
-    other_key_pressed.any = true;
-  }
-}
-
-void reset_other_key_pressed(void) {
-  other_key_pressed.lower = false;
-  other_key_pressed.raise = false;
-  other_key_pressed.any = false;
-}
-
-void set_other_key_pressed(void) {
-  other_key_pressed.lower = true;
-  other_key_pressed.raise = true;
-  other_key_pressed.any = true;
-}
-
-bool all_keys_released(void) {
-  for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
-    // matrix_get_row() はその行のビットマップを返す
-    if (matrix_get_row(row)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static uint16_t all_keys_released_time;
-
-// CTRLキーが現在押されているか確認するヘルパー関数
-bool is_control_pressed(void) {
-  GET_OS();
-  switch (global_os_cache) {
-    case OS_MACOS:  // MacOS
-      return (get_mods() & MOD_BIT(MC_LCTL)) || (get_mods() & MOD_BIT(MC_RCTL));
-    default:  // Windows/Linux
-      return (get_mods() & MOD_BIT(KC_LCTL)) || (get_mods() & MOD_BIT(KC_RCTL));
-  }
-}
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  // 全キー共通の前処理
-  if (record->event.pressed) {
-
-    // LOWERでもRAISEでもない通常キーが押された場合
-    if (keycode != LOWER && keycode != RAISE) {
-      set_other_key_pressed(); // 両方のフラグをセット
-    } else if (keycode == LOWER) {
-      set_other_key_pressed_exept(&other_key_pressed.lower);
-    } else if (keycode == RAISE) {
-      set_other_key_pressed_exept(&other_key_pressed.raise);
-    }
-
-  } else {
-    if (all_keys_released()) {
-      all_keys_released_time = record->event.time;
-    }
-  }
-
-  switch (keycode) {
-    case LOWER:
-      if (record->event.pressed) {
-        // 高速タイピング対応: キーの状態をリセット
-        if (timer_elapsed(all_keys_released_time) < TAPPING_TERM) {
-          reset_other_key_pressed();
-        }
-
-        if (timer_elapsed(lower_state.released_time) < TAPPING_TERM) {
-          lower_state.rapid_press = true;  // 連打
-        } else {
-          lower_state.rapid_press = false;  // 連打リセット
-        }
-
-        lower_state.pressed = true;
-        lower_state.pressed_time = record->event.time;
-        other_key_pressed_except(&other_key_pressed.lower);
-        lower_state.bspc_active = false;
-
-        layer_on(_LOWER);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-      } else {
-        // 単打判定の修正: 高速タイピングでも単打を許容
-        if (timer_elapsed(lower_state.pressed_time) < TAPPING_TERM &&
-            !other_key_pressed.lower &&
-            !lower_state.rapid_press) {  // 連打でない場合のみBSPC発行
-          tap_code(KC_BSPC);
-          lower_state.backspace_sent = true;
-          lower_state.released_time = record->event.time;
-        }
-
-        if (lower_state.bspc_active) {
-          unregister_code(KC_BSPC);
-          lower_state.bspc_active = false;
-          // lower_state.backspace_sent = false;
-        }
-
-        layer_off(_LOWER);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-        lower_state.pressed = false;
-      }
-      return false;
-
-    case RAISE:
-      if (record->event.pressed) {
-        // 高速タイピング対応: キーの状態をリセット
-        if (timer_elapsed(all_keys_released_time) < TAPPING_TERM) {
-          reset_other_key_pressed();
-        }
-
-        if (timer_elapsed(raise_state.released_time) < TAPPING_TERM) {
-          raise_state.rapid_press = true;  // 連打
-        } else {
-          raise_state.rapid_press = false;  // 連打リセット
-        }
-
-        raise_state.pressed = true;
-        raise_state.pressed_time = record->event.time;
-        other_key_pressed_except(&other_key_pressed.raise);
-        raise_state.spc_active = false;
-
-        layer_on(_RAISE);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-
-        // CTRLキーが押されている場合は、即座にSPACEも押下してCTRL+SPACEにする
-        if (is_control_pressed()) {
-          register_code(KC_SPACE);
-        }
-      } else {
-        // 単打判定の修正: 高速タイピングでも単打を許容
-        if (timer_elapsed(raise_state.pressed_time) < TAPPING_TERM &&
-            !other_key_pressed.raise < TAPPING_TERM &&
-            !raise_state.rapid_press) {  // 連打でない場合のみSPC発行
-          // CTRLが押されていない場合のみスペース単打を発行
-          if (!is_control_pressed()) {
-            tap_code(KC_SPACE);
-            raise_state.space_sent = true;
-            raise_state.released_time = record->event.time;
-          }
-        }
-
-        // CTRLが押されている場合はスペースキーを解放
-        if (is_control_pressed()) {
-          unregister_code(KC_SPACE);
-        }
-
-        if (raise_state.spc_active) {
-          unregister_code(KC_SPC);
-          raise_state.spc_active = false;
-        }
-
-        layer_off(_RAISE);
-        update_tri_layer(_LOWER, _RAISE, _ADJUST);
-        raise_state.pressed = false;
-      }
-      return false;
-
-    case ADJUST:
-      if (record->event.pressed) {
-        layer_on(_ADJUST);
-      } else {
-        layer_off(_ADJUST);
-      }
-      return false;
-      break;
-
-    case MHENKAN:
-      if (record->event.pressed) {
-        ime_state.mods_active = true;
-        ime_state.mhenkan_pressed = true;
-        ime_state.mhenkan_pressed_time = record->event.time;
-
-        // 修飾キーを登録（押したときに登録）
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_LALT));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_LALT));
-            break;
-        }
-      } else {
-        if (timer_elapsed(ime_state.mhenkan_pressed_time) < TAPPING_TERM &&
-            !other_key_pressed.lower && !other_key_pressed.raise) {
-          // 単打時の処理（他のキーが押されていない場合のみ）
-          GET_OS();
-          switch (global_os_cache) {
-            case OS_MACOS:  // MacOS
-              tap_code(KC_LANGUAGE_2);
-              break;
-            case OS_WINDOWS:  // Windows
-              tap_code(KC_INTERNATIONAL_5);
-              break;
-            default:  // Linux
-              tap_code(KC_INTERNATIONAL_5);
-              break;
-          }
-          naginata_off();
-        }
-
-        // 修飾キーを解除
-        ime_state.mhenkan_pressed = false;
-        ime_state.mods_active = ime_state.henkan_pressed ? true : false;
-
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            unregister_mods(MOD_BIT(MC_LALT));
-            break;
-          default:  // Windows/Linux
-            unregister_mods(MOD_BIT(KC_LALT));
-            break;
-        }
-      }
-      return false;
-
-    case HENKAN:
-      if (record->event.pressed) {
-        ime_state.mods_active = true;
-        ime_state.henkan_pressed = true;
-        ime_state.henkan_pressed_time = record->event.time;
-
-        // 修飾キーを登録（押したときに登録）
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_RWIN));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_RWIN));
-            break;
-        }
-      } else {
-        if (timer_elapsed(ime_state.henkan_pressed_time) < TAPPING_TERM &&
-        !other_key_pressed.lower && !other_key_pressed.raise) {
-          GET_OS();
-          switch (global_os_cache) {
-            case OS_MACOS:  // MacOS
-              tap_code(KC_LANGUAGE_1);
-              break;
-            case OS_WINDOWS:  // Windows
-              tap_code(KC_INTERNATIONAL_4);
-              break;
-            default:  // Linux
-              tap_code(KC_INTERNATIONAL_4);
-              break;
-          }
-          naginata_on();
-        }
-        ime_state.henkan_pressed = false;
-        ime_state.mods_active = ime_state.mhenkan_pressed ? true : false;
-
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            unregister_mods(MOD_BIT(MC_LWIN));
-            break;
-          default:  // Windows/Linux
-            unregister_mods(MOD_BIT(KC_LWIN));
-            break;
-        }
-            // 修飾キーを解除
-    ime_state.henkan_pressed = false;
-    ime_state.mods_active = ime_state.mhenkan_pressed ? true : false;
-
-    GET_OS();
-    switch (global_os_cache) {
-      case OS_MACOS:  // MacOS
-        unregister_mods(MOD_BIT(MC_LWIN));
-        break;
-      default:  // Windows/Linux
-        unregister_mods(MOD_BIT(KC_RWIN));
-        break;
-    }
-      }
-      return false;
-
-#ifdef OS_DETECTION_ENABLE
-    case AUTO_MODE:
-      if (record->event.pressed) {
-        current_os_mode = OS_UNSURE;  // OS_AUTOではなくOS_UNSUREを使用
-        // 状態を永続化する場合はEEPROMに書き込み
-        // eeconfig_update_user((uint32_t)current_os_mode);
-        set_other_key_pressed();
-      }
-      return false;
-#else
-    case AUTO_MODE:
-      if (record->event.pressed) {
-        current_os_mode = OS_AUTO;  // 自前定義のOS_AUTOを使用
-        // 状態を永続化する場合はEEPROMに書き込み
-        // eeconfig_update_user((uint32_t)current_os_mode);
-        set_other_key_pressed();
-      }
-      return false;
-#endif
-
-#ifdef OS_DETECTION_ENABLE
-    case MAC_MODE:
-      if (record->event.pressed) {
-        current_os_mode = OS_MACOS;  // os_detection.hで定義されたOS_MACOS
-        set_other_key_pressed();
-      }
-      return false;
-
-    case WIN_MODE:
-      if (record->event.pressed) {
-        current_os_mode = OS_WINDOWS;  // os_detection.hで定義されたOS_WINDOWS
-        set_other_key_pressed();
-      }
-      return false;
-#else
-    case MAC_MODE:
-      if (record->event.pressed) {
-        current_os_mode = OS_MACOS;  // 自前定義のOS_MACOSを使用
-        set_other_key_pressed();
-      }
-      return false;
-
-    case WIN_MODE:
-      if (record->event.pressed) {
-        current_os_mode = OS_WINDOWS;  // 自前定義のOS_WINDOWSを使用
-        set_other_key_pressed();
-      }
-      return false;
-#endif
-
-    case C_SPACE:
-      if (record->event.pressed) {
-        c_space_state.pressed_time = record->event.time;
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_LCTL));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_LCTL));
-            break;
-        }
-        set_other_key_pressed();
-      } else {
-        if (timer_elapsed(c_space_state.pressed_time) < TAPPING_TERM) {
-          tap_code(KC_SPACE);
-          set_other_key_pressed();
-        } else {
-          GET_OS();
-          switch (global_os_cache) {
-            case OS_MACOS:  // MacOS
-              unregister_mods(MOD_BIT(MC_LCTL));
-              break;
-            default:  // Windows/Linux
-              unregister_mods(MOD_BIT(KC_LCTL));
-              break;
-          }
-        }
-      }
-      return false;
-
-    case C_BSPC:
-      if (record->event.pressed) {
-        c_bspc_state.pressed = true;
-        c_bspc_state.pressed_time = record->event.time;
-        c_bspc_state.bspc_active = false;
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_LCTL));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_LCTL));
-            break;
-        }
-        set_other_key_pressed();
-        return false;
-      } else {
-        // キーを離した時の処理
-        if (timer_elapsed(c_bspc_state.pressed_time) < TAPPING_TERM) {
-          // タップした場合はバックスペース入力
-          tap_code(KC_BSPC);
-          c_bspc_state.backspace_sent = true;
-          c_bspc_state.released_time = record->event.time;
-        } else {
-          // 長押しの場合は修飾キーを解除
-          GET_OS();
-          switch (global_os_cache) {
-            case OS_MACOS:  // MacOS
-              unregister_mods(MOD_BIT(MC_LCTL));
-              break;
-            default:  // Windows/Linux
-              unregister_mods(MOD_BIT(KC_LCTL));
-              break;
-          }
-        }
-        c_bspc_state.pressed = false;
-        return false;
-      }
-
-    case OA_LCTL:
-      if (record->event.pressed) {
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_LCTL));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_LCTL));
-            break;
-        }
-        set_other_key_pressed();
-        return false;
-
-      } else {
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            unregister_mods(MOD_BIT(MC_LCTL));
-            break;
-          default:  // Windows/Linux
-            unregister_mods(MOD_BIT(KC_LCTL));
-            break;
-        }
-        return false;
-      }
-
-    case OA_LWIN:
-      if (record->event.pressed) {
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_LWIN));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_LWIN));
-            break;
-        }
-        set_other_key_pressed();
-        return false;
-      } else {
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            unregister_mods(MOD_BIT(MC_LWIN));
-            break;
-          default:  // Windows/Linux
-            unregister_mods(MOD_BIT(KC_LWIN));
-            break;
-        }
-        return false;
-      }
-
-    case OA_RALT:
-
-      if (record->event.pressed) {
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            register_mods(MOD_BIT(MC_RALT));
-            break;
-          default:  // Windows/Linux
-            register_mods(MOD_BIT(KC_RALT));
-            break;
-        }
-        set_other_key_pressed();
-        return false;
-      } else {
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_MACOS:  // MacOS
-            unregister_mods(MOD_BIT(MC_RALT));
-            break;
-          default:  // Windows/Linux
-            unregister_mods(MOD_BIT(KC_RALT));
-            break;
-        }
-        return false;
-      }
-
-    case OS_DISP:
-      if (record->event.pressed) {
-#ifdef OS_DETECTION_ENABLE
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_UNSURE:
-            SEND_STRING("OS Mode: Auto Detect");
-            break;
-          case OS_LINUX:
-            SEND_STRING("OS Mode: Linux");
-            break;
-          case OS_WINDOWS:
-            SEND_STRING("OS Mode: Windows");
-            break;
-          case OS_MACOS:
-            SEND_STRING("OS Mode: MacOS");
-            break;
-          default:
-            SEND_STRING("OS Mode: Unknown");
-            break;
-        }
-#else
-        GET_OS();
-        switch (global_os_cache) {
-          case OS_AUTO:
-            SEND_STRING("OS Mode: Auto");
-            break;
-          case OS_WINDOWS:
-            SEND_STRING("OS Mode: Windows");
-            break;
-          case OS_MACOS:
-            SEND_STRING("OS Mode: macOS");
-            break;
-          case OS_LINUX:
-            SEND_STRING("OS Mode: Linux");
-            break;
-          default:
-            SEND_STRING("OS Mode: Unknown");
-            break;
-        }
-#endif
-      }
-      return false;
-
-    default:
-      if (record->event.pressed) {
-        // 修飾キーの処理
-        if (ime_state.mods_active) {
-          if (ime_state.henkan_pressed) {
-            register_mods(MOD_BIT(KC_RWIN));
-            tap_code(keycode);
-            unregister_mods(MOD_BIT(KC_RWIN));
-          }
-          if (ime_state.mhenkan_pressed) {
-            register_mods(MOD_BIT(KC_LALT));
-            tap_code(keycode);
-            unregister_mods(MOD_BIT(KC_LALT));
-          }
-
-          set_other_key_pressed();
-          return false;
-        }
-      }
-
-      // 薙刀式とその他の処理
-      if (!twpair_on_jis(keycode, record)) return false;
-      if (!process_naginata(keycode, record)) return true;
-
-      return true;
+  // 不正な値の場合はデフォルトに
+  if (global_os_cache > OS_UNKNOWN) {
+    global_os_cache = OS_AUTO;
   }
 }
 
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
-  // BSPCリピート開始条件
-  if (lower_state.pressed && lower_state.backspace_sent &&
-      !lower_state.bspc_active && !other_key_pressed.lower &&
-      (timer_elapsed(lower_state.released_time) < TAPPING_TERM)) {
-    lower_state.bspc_active = true;
-    register_code(KC_BSPC);
-    lower_state.backspace_sent = false;
-  }
+  // スリープ・電源管理関係の処理はそのまま残す
 
-  // BSPCリピート終了条件
-  if ((!lower_state.pressed && lower_state.bspc_active) ||
-      other_key_pressed.lower) {
-    unregister_code(KC_BSPC);
-    lower_state.bspc_active = false;
-  }
+  // 全てのキーのリピート処理を追加
+  // C_SPC キー
+  handle_advanced_repeat(c_spc_state.pressed, c_spc_state.pressed_time,
+                         c_spc_state.released_time, &c_spc_state.repeat_active,
+                         &c_spc_state.code_sent, &c_spc_state.rapid_press,
+                         c_spc_state.other_key_pressed, KC_SPC, KC_RCTL);
 
-  // C_BSPCリピート開始条件 - ここに追加
-  if (c_bspc_state.pressed && c_bspc_state.backspace_sent &&
-      !c_bspc_state.bspc_active &&
-      (timer_elapsed(c_bspc_state.released_time) < TAPPING_TERM)) {
-    c_bspc_state.bspc_active = true;
-    register_code(KC_BSPC);
-    c_bspc_state.backspace_sent = false;
-  }
+  // C_BSPC キー
+  handle_advanced_repeat(c_bspc_state.pressed, c_bspc_state.pressed_time,
+                         c_bspc_state.released_time,
+                         &c_bspc_state.repeat_active, &c_bspc_state.code_sent,
+                         &c_bspc_state.rapid_press,
+                         c_bspc_state.other_key_pressed, KC_BSPC, KC_LCTL);
 
-  // C_BSPCリピート終了条件 - ここに追加
-  if (!c_bspc_state.pressed && c_bspc_state.bspc_active) {
-    unregister_code(KC_BSPC);
-    c_bspc_state.bspc_active = false;
-  }
+  // Lower キー
+  handle_advanced_repeat(lower_state.pressed, lower_state.pressed_time,
+                         lower_state.released_time, &lower_state.repeat_active,
+                         &lower_state.code_sent, &lower_state.rapid_press,
+                         lower_state.other_key_pressed, KC_BSPC, KC_NO);
 
-  // SPCリピート開始条件
-  if (raise_state.pressed && raise_state.space_sent &&
-      !raise_state.spc_active && !other_key_pressed.raise &&
-      (timer_elapsed(raise_state.released_time) < TAPPING_TERM)) {
-    raise_state.spc_active = true;
-    register_code(KC_SPC);
-    raise_state.space_sent = false;
-  }
+  // Raise キー
+  handle_advanced_repeat(raise_state.pressed, raise_state.pressed_time,
+                         raise_state.released_time, &raise_state.repeat_active,
+                         &raise_state.code_sent, &raise_state.rapid_press,
+                         raise_state.other_key_pressed, KC_SPC, KC_NO);
 
-  // SPCリピート終了条件
-  if ((!raise_state.pressed && raise_state.spc_active) ||
-      other_key_pressed.raise) {
-    unregister_code(KC_SPC);
-    raise_state.spc_active = false;
-  }
+  // HENKAN キー
+  handle_advanced_repeat(henkan_state.pressed, henkan_state.pressed_time,
+                         henkan_state.released_time,
+                         &henkan_state.repeat_active, &henkan_state.code_sent,
+                         &henkan_state.rapid_press,
+                         henkan_state.other_key_pressed, KC_HENKAN, KC_RWIN);
 
-  // 修飾キーのクリーンアップ
-  if (all_keys_released() && (timer_elapsed(all_keys_released_time) > TAPPING_TERM)) {
-    lower_state.pressed = false;
-    raise_state.pressed = false;
-    ime_state.henkan_pressed = false;
-    ime_state.mhenkan_pressed = false;
-    ime_state.mods_active = false;
+  // MHENKAN キー
+  handle_advanced_repeat(mhenkan_state.pressed, mhenkan_state.pressed_time,
+                         mhenkan_state.released_time,
+                         &mhenkan_state.repeat_active, &mhenkan_state.code_sent,
+                         &mhenkan_state.rapid_press,
+                         mhenkan_state.other_key_pressed, KC_MHENKAN, KC_LALT);
+
+  // 既存の自動リセット処理
+  if (all_keys_released() && timer_elapsed(all_keys_released_time) > 1000) {
     reset_other_key_pressed();
-
-    // 修飾キーのクリーンアップ修正
-    unregister_mods(MOD_BIT(KC_LALT));
-    unregister_mods(MOD_BIT(KC_LWIN));
-    unregister_mods(MOD_BIT(KC_LCTL));
-    unregister_mods(MOD_BIT(KC_LSFT));
-    unregister_mods(MOD_BIT(KC_RALT));
-    unregister_mods(MOD_BIT(KC_RWIN));
-    unregister_mods(MOD_BIT(KC_RCTL));
-    unregister_mods(MOD_BIT(KC_RSFT));
+    clean_all_mods_key();
   }
+
+  // 薙刀式の処理はそのまま残す
 }
-
-// HIDレポートのハンドリング
-void raw_hid_receive(uint8_t *data, uint8_t length) {
-  if (length < 1) return;
-
-  switch (data[0]) {
-    case 0x01:  // IME状態更新
-      if (data[1]) {
-        naginata_on();
-      } else {
-        naginata_off();
-      }
-      break;
-  }
-}
-
-// 状態管理用の静的変数を追加
-static bool mods_active = false;
 
 // タップダンス終了時の処理
 void cstab_finished(tap_dance_state_t *state, void *user_data) {
   if (state->count == 1) {
     if (state->interrupted || !state->pressed) {
+      // 単体タップ: TAB
       register_code(KC_TAB);
     } else {
-      mods_active = true;
-      GET_OS();
-      switch (global_os_cache) {
-        case OS_MACOS:  // MacOS
-          register_mods(MOD_BIT(MC_LCTL) | MOD_BIT(KC_LSFT));
-          break;
-        default:  // Windows/Linux
-          register_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
-          break;
-      }
+      // 他のキーと同時押し: CTRL+SHIFT
+      cs_tab_state.mods_active = true;
+      register_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
     }
   } else if (state->count == 2) {
+    // ダブルタップ: ESC
     register_code(KC_ESC);
   }
 }
@@ -960,33 +206,17 @@ void cstab_reset(tap_dance_state_t *state, void *user_data) {
   if (state->count == 1) {
     if (state->interrupted || !state->pressed) {
       unregister_code(KC_TAB);
-    } else if (mods_active) {
-      GET_OS();
-      switch (global_os_cache) {
-        case OS_MACOS:  // MacOS
-          unregister_mods(MOD_BIT(MC_LCTL) | MOD_BIT(KC_LSFT));
-          break;
-        default:  // Windows/Linux
-          unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
-          break;
-      }
-      mods_active = false;
+    } else if (cs_tab_state.mods_active) {
+      unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+      clean_all_mods_key();
     }
   } else if (state->count == 2) {
     unregister_code(KC_ESC);
   }
-
-  if (mods_active) {
-    GET_OS();
-    switch (global_os_cache) {
-      case OS_MACOS:  // MacOS
-        unregister_mods(MOD_BIT(MC_LCTL) | MOD_BIT(KC_LSFT));
-        break;
-      default:  // Windows/Linux
-        unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
-        break;
-    }
-    mods_active = false;
+  // 安全のため、必ず修飾キーをクリア
+  if (cs_tab_state.mods_active) {
+    unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+    clean_all_mods_key();
   }
 }
 
@@ -1002,9 +232,19 @@ tap_dance_action_t tap_dance_actions[] = {
 
 // keyboard_post_init_user関数を修正
 void keyboard_post_init_user(void) {
-  // デバッグモードを有効化
-  debug_enable = true;
-  debug_matrix = true;
+  // EEPROMから前回の設定を読み込む
+  keyboard_os_t saved_os = (keyboard_os_t)eeconfig_read_user();
+
+  // 有効な値であれば適用、無効ならデフォルト(MACOS)を設定
+  if (saved_os >= OS_AUTO && saved_os <= OS_LINUX) {
+    set_os_mode(saved_os);
+  } else {
+    set_os_mode(OS_MACOS);  // デフォルトはMacOS
+  }
+
+  // 薙刀式の初期化など、他の初期化処理
+  naginata_clear();
+  naginata_off();
 
   // RGB初期化
   rgb_matrix_enable();
@@ -1012,12 +252,13 @@ void keyboard_post_init_user(void) {
   rgb_matrix_sethsv(HSV_GREEN);
 
   // 最大輝度を設定（LEDが多すぎると電力不足になることがある）
-  rgb_matrix_set_speed(128);  // 中程度の速度
+  rgb_matrix_set_speed(128);            // 中程度の速度
   rgb_matrix_set_color_all(0, 255, 0);  // 緑色に設定（全LEDを点灯）
 
   // デバッグ情報の出力
   dprintf("RGB Matrix Status: %d\n", rgb_matrix_is_enabled());
-  dprintf("LED Config: %d LEDs, Mode: %d\n", DRIVER_LED_TOTAL, rgb_matrix_get_mode());
+  dprintf("LED Config: %d LEDs, Mode: %d\n", DRIVER_LED_TOTAL,
+          rgb_matrix_get_mode());
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
@@ -1042,7 +283,105 @@ layer_state_t layer_state_set_user(layer_state_t state) {
       break;
     case _ADJUST:
       rgb_matrix_sethsv(HSV_YELLOW);
+      lower_state.mods_active = false;
+      raise_state.mods_active = false;
+      unregister_mods(MOD_MASK_CTRL | MOD_MASK_SHIFT | MOD_MASK_ALT |
+                      MOD_MASK_GUI);
       break;
   }
   return state;
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  // 全キー共通の前処理
+  if (record->event.pressed) {
+    handle_key_press_init(keycode);
+  } else {
+    if (all_keys_released()) {
+      all_keys_released_time = record->event.time;
+    }
+  }
+
+  switch (keycode) {
+    case LOWER:
+      return handle_lower_key(record);
+
+    case RAISE:
+      return handle_raise_key(record);
+
+    case ADJUST:
+      if (record->event.pressed) {
+        layer_on(_ADJUST);
+
+        // 修飾キー状態のリセット（重要）
+        clean_all_mods_key();
+
+        // 物理的な修飾キーも解除
+        unregister_mods(MOD_MASK_CTRL | MOD_MASK_SHIFT | MOD_MASK_ALT |
+                        MOD_MASK_GUI);
+
+        // すべてのキーのコード送信状態をリセット
+        reset_code_sent();
+
+        reset_rapid_press();
+
+        // 他のキーが押されていることをリセット
+      } else {
+        layer_off(_ADJUST);
+      }
+      return false;
+
+    // OS切替キーの処理
+    case MAC_MODE:
+      if (record->event.pressed) {
+        set_os_mode(OS_MACOS);
+        // 設定保存や状態リセットが必要な場合はここに追加
+      }
+      return false;
+
+    case WIN_MODE:
+      if (record->event.pressed) {
+        set_os_mode(OS_WINDOWS);
+        // 設定保存や状態リセットが必要な場合はここに追加
+      }
+      return false;
+
+    case OS_DISP:
+      return handle_os_display();
+
+    case MHENKAN:
+      return handle_mhenkan_key(record);
+
+    case HENKAN:
+      return handle_henkan_key(record);
+
+    case C_SPC:
+      return handle_c_spc_key(record);  // 新しいハンドラ関数を使用
+
+    case C_BSPC:
+      return handle_c_bspc_key(record);  // 新しいハンドラ関数を使用
+
+    default:
+      if (record->event.pressed) {
+        if (!is_modifier(keycode) && !lower_state.mods_active && !raise_state.mods_active &&
+            !c_spc_state.mods_active && !c_bspc_state.mods_active &&
+            !henkan_state.mods_active && !mhenkan_state.mods_active)
+          return false;
+
+        // 修飾キーの処理
+        if (!is_modifier(keycode)) {
+          if (get_mods_active()) {
+            apply_active_mods(keycode);
+            tap_code(keycode);
+            return false;
+          }
+        }
+      }
+
+      // 薙刀式とその他の処理
+      if (!twpair_on_jis(keycode, record)) return false;
+      if (!process_naginata(keycode, record)) return true;
+
+      return true;
+  }
 }

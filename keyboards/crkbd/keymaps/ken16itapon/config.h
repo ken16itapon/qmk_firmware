@@ -20,14 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-// #define USE_MATRIX_I2C
-
-// #define QUICK_TAP_TERM 0
-// #define TAPPING_TERM 100
-
-// 以下の設定を確認/追加してください
 #undef RGB_LIGHT_ENABLE
 
+#undef RGB_MATRIX_ENABLE
 #define RGB_MATRIX_ENABLE
 
 #ifdef RGB_MATRIX_ENABLE
@@ -43,18 +38,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RGB_MATRIX_KEYPRESSES
 #endif
 
-#define TAPPING_TERM 200  // �f�t�H���g��200ms
+#define TAPPING_TERM 200
 
 #define NG_NO_HENSHU
 #define NG_NO_KOYUMEISHI
 
-// Boot Magic Lightの有効化
-#define BOOTMAGIC_LITE_ROW 0
-#define BOOTMAGIC_LITE_COLUMN 0  // 左上のキー（通常はTABキー）
+// bootmagic関連の設定を無効化し競合を避ける
+#define NO_BOOTMAGIC
 
 // オプション：EEPROMへの書き込み回数を減らす設定
 #define BOOTMAGIC_LITE_EEPROM_BLOCK_COUNT 4
 
 // LEDの数を正しく設定
-#define RGBLED_NUM 54        // Corne用（通常は27個×2）
-#define DRIVER_LED_TOTAL 54  // Corneの場合
+#define RGBLED_NUM 46        // Corne用（通常は27個×2）
+#define DRIVER_LED_TOTAL 46  // Corneの場合
+
+// 既存の設定の後に追加
+
+// タップダンス設定
+#define TAPPING_TERM 200
+#define TAP_CODE_DELAY 10  // タップ間の遅延
