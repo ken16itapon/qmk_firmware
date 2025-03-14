@@ -4,10 +4,11 @@
 
 #include "key_handlers.h"  // その後に関数定義
 #include "keymap_japanese.h"
-#include "naginata.h"
+
 #include "os_specific.h"
 #include "state_manager.h"  // 先に型定義
 #include "twpair_on_jis.h"
+#include "naginata.h"
 
 // カスタムキーコード定義
 enum custom_keycodes {

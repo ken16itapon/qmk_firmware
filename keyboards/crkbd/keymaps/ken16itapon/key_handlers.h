@@ -19,7 +19,7 @@ void handle_key_press_init(uint16_t keycode);
 bool handle_tap_key(bool pressed, uint16_t pressed_time,
                     uint16_t *released_time, bool *code_sent, bool *rapid_press,
                     bool *repeat_active, bool *mod_key_pressed,
-                    bool other_pressed, uint16_t keycode, uint16_t record_time);
+                    bool other_pressed, uint16_t keycode, uint16_t mod_key, uint16_t record_time);
 
 void handle_advanced_repeat(bool is_pressed, uint16_t pressed_time,
                             uint16_t released_time, bool *active_flag,

@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "os_specific.h"    // OS関連の関数を使うために追加
 #include "state_manager.h"  // is_modifier関数を使うために追加
 
+
 enum {
   TD_CSTAB = 0,
 };
@@ -180,8 +181,6 @@ void matrix_scan_user(void) {
     reset_other_key_pressed();
     clean_all_mods_key();
   }
-
-  // 薙刀式の処理はそのまま残す
 }
 
 // タップダンス終了時の処理
@@ -282,11 +281,11 @@ layer_state_t layer_state_set_user(layer_state_t state) {
       rgb_matrix_sethsv(HSV_RED);
       break;
     case _ADJUST:
+      clean_all_mods_key();
+      reset_rapid_press();
+      lower_state.other_key_pressed = true;
+      raise_state.other_key_pressed = true;
       rgb_matrix_sethsv(HSV_YELLOW);
-      lower_state.mods_active = false;
-      raise_state.mods_active = false;
-      unregister_mods(MOD_MASK_CTRL | MOD_MASK_SHIFT | MOD_MASK_ALT |
-                      MOD_MASK_GUI);
       break;
   }
   return state;
@@ -312,20 +311,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case ADJUST:
       if (record->event.pressed) {
         layer_on(_ADJUST);
-
-        // 修飾キー状態のリセット（重要）
+        update_tri_layer(_LOWER, _RAISE, _ADJUST);
         clean_all_mods_key();
-
-        // 物理的な修飾キーも解除
-        unregister_mods(MOD_MASK_CTRL | MOD_MASK_SHIFT | MOD_MASK_ALT |
-                        MOD_MASK_GUI);
-
-        // すべてのキーのコード送信状態をリセット
         reset_code_sent();
-
         reset_rapid_press();
+        set_other_key_pressed();
 
-        // 他のキーが押されていることをリセット
       } else {
         layer_off(_ADJUST);
       }
@@ -356,32 +347,29 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return handle_henkan_key(record);
 
     case C_SPC:
-      return handle_c_spc_key(record);  // 新しいハンドラ関数を使用
+      return handle_c_spc_key(record);
 
     case C_BSPC:
-      return handle_c_bspc_key(record);  // 新しいハンドラ関数を使用
+      return handle_c_bspc_key(record);
 
     default:
       if (record->event.pressed) {
-        if (!is_modifier(keycode) && !lower_state.mods_active && !raise_state.mods_active &&
-            !c_spc_state.mods_active && !c_bspc_state.mods_active &&
-            !henkan_state.mods_active && !mhenkan_state.mods_active)
-          return false;
-
-        // 修飾キーの処理
-        if (!is_modifier(keycode)) {
+        if (is_modifier(keycode)) {
+          return true;
+        } else {
           if (get_mods_active()) {
             apply_active_mods(keycode);
             tap_code(keycode);
             return false;
           }
+          return true;
         }
       }
-
-      // 薙刀式とその他の処理
-      if (!twpair_on_jis(keycode, record)) return false;
-      if (!process_naginata(keycode, record)) return true;
-
-      return true;
   }
+
+  if (!twpair_on_jis(keycode, record)) return false;
+
+  if (!process_naginata(keycode, record)) return false;
+
+  return true;
 }
