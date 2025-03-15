@@ -58,3 +58,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // タップダンス設定
 #define TAPPING_TERM 200
 #define TAP_CODE_DELAY 10  // タップ間の遅延
+
+#define OS_DETECTION_ENABLE  // OS検出機能を有効化

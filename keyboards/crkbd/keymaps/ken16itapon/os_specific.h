@@ -21,13 +21,9 @@ enum custom_keycodes;
 #define KC_MHENKAN KC_INT5  // WindowsでのIME無効化
 
 #ifdef OS_DETECTION_ENABLE
-typedef enum {
-  OS_AUTO = OS_UNSURE,
-  OS_WINDOWS = OS_WINDOWS,
-  OS_MACOS = OS_MACOS,
-  OS_LINUX = OS_LINUX
-} keyboard_os_t;
-#else
+typedef os_variant_t keyboard_os_t;
+#define OS_AUTO OS_UNSURE
+#define OS_UNKNOWN OS_UNSURE + 1
 // 自前のOS定義
 typedef enum {
   OS_AUTO = 0,  // OS検出機能に任せる

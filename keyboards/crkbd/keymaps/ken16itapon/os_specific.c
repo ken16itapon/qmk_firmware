@@ -169,13 +169,14 @@ void eeconfig_update_os_mode(keyboard_os_t mode) {
 // EEPROMから読み込む関数
 keyboard_os_t eeconfig_read_os_mode(void) {
   // QMK APIを使用して値を取得
-  uint32_t mode = eeconfig_read_user();
+  uint32_t val = eeconfig_read_user();
 
   // 8ビット値として扱う（キーボードOSタイプは列挙型で小さな値）
-  uint8_t os_mode = (uint8_t)(mode & 0xFF);
+  uint8_t os_mode = (uint8_t)(val & 0xFF);
 
-  // 有効範囲チェック
-  if (os_mode > OS_UNKNOWN) {
+  // 有効範囲チェック - 明示的な値をチェック
+  if (os_mode != OS_AUTO && os_mode != OS_WINDOWS && os_mode != OS_MACOS &&
+      os_mode != OS_LINUX) {
     os_mode = OS_MACOS;  // デフォルトはMacOS
   }
 
@@ -192,7 +193,6 @@ void set_os_mode(keyboard_os_t os) {
 
   // デバッグ情報
   dprintf("OS Mode set to: %d\n", os);
-
 
 // 状態表示LEDなど、必要であれば設定
 #ifdef RGB_MATRIX_ENABLE

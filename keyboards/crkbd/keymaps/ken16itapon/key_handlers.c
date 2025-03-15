@@ -44,31 +44,22 @@ void handle_key_press_init(uint16_t keycode) {
     case LOWER:
       reset_code_sent_except(&lower_state);
       other_key_pressed_except(&lower_state);
-      reset_pressed_except(&lower_state);
-      reset_pressed_except(&lower_state);
       break;
     case RAISE:
       reset_code_sent_except(&raise_state);
       other_key_pressed_except(&raise_state);
-      reset_code_sent_except(&raise_state);
-      reset_pressed_except(&raise_state);
       break;
     case C_SPC:
       reset_code_sent_except(&c_spc_state);
       other_key_pressed_except(&c_spc_state);
-      reset_code_sent_except(&c_spc_state);
-      reset_pressed_except(&c_spc_state);
       break;
     case C_BSPC:
       reset_code_sent_except(&c_bspc_state);
       other_key_pressed_except(&c_bspc_state);
-      reset_code_sent_except(&c_bspc_state);
-      reset_pressed_except(&c_bspc_state);
       break;
     default:
       reset_code_sent();
       set_other_key_pressed();
-      reset_code_sent();
       reset_rapid_press();
       break;
   }

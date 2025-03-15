@@ -369,7 +369,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
   if (!twpair_on_jis(keycode, record)) return false;
 
-  if (!process_naginata(keycode, record)) return false;
+  if (!process_naginata(keycode, record)) return true;
 
   return true;
 }
