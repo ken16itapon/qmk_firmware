@@ -34,6 +34,7 @@ extern key_state_t mhenkan_state;
 
 // 関数宣言
 void set_other_key_pressed(void);
+void reset_key_pressed(void);
 void other_key_pressed_except(key_state_t *target);
 void reset_rapid_press(void);
 void reset_rapid_press_except(key_state_t *target);

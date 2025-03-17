@@ -12,15 +12,12 @@ void handle_advanced_repeat(bool is_pressed, uint16_t pressed_time,
                             uint16_t mod_key) {
   // 既にアクティブな場合、単に状態を更新
   if (*active_flag) {
-    if (!is_pressed) {
-      unregister_code(keycode);
-      *active_flag = false;
-    }
     return;
   }
 
   // リピート開始条件判定（すべての条件を明示的にチェック）
   if (!is_pressed) return;              // キーが押されている
+  if (other_key_pressed) return;        // 他のキーが押されていない
   if (!*code_sent) return;              // コードが送信済み
   if (*active_flag) return;             // リピートでない
   if (!*rapid_press) return;            // 連続タップされている
@@ -34,34 +31,29 @@ void handle_advanced_repeat(bool is_pressed, uint16_t pressed_time,
 
   *code_sent = false;
   *active_flag = true;
-  register_code(keycode);
+  register_os_specific_key(keycode);
   return;
 }
 
 // キー押下時の初期化処理
 void handle_key_press_init(uint16_t keycode) {
-  switch (keycode) {
-    case LOWER:
-      reset_code_sent_except(&lower_state);
-      other_key_pressed_except(&lower_state);
-      break;
-    case RAISE:
-      reset_code_sent_except(&raise_state);
-      other_key_pressed_except(&raise_state);
-      break;
-    case C_SPC:
-      reset_code_sent_except(&c_spc_state);
-      other_key_pressed_except(&c_spc_state);
-      break;
-    case C_BSPC:
-      reset_code_sent_except(&c_bspc_state);
-      other_key_pressed_except(&c_bspc_state);
-      break;
-    default:
-      reset_code_sent();
-      set_other_key_pressed();
-      reset_rapid_press();
-      break;
+  if (keycode != HENKAN && henkan_state.pressed) {
+    henkan_state.other_key_pressed = true;
+  }
+  if (keycode != MHENKAN && mhenkan_state.pressed) {
+    mhenkan_state.other_key_pressed = true;
+  }
+  if (keycode != C_SPC && c_spc_state.pressed) {
+    c_spc_state.other_key_pressed = true;
+  }
+  if (keycode != C_BSPC && c_bspc_state.pressed) {
+    c_bspc_state.other_key_pressed = true;
+  }
+  if (keycode != LOWER && lower_state.pressed) {
+    lower_state.other_key_pressed = true;
+  }
+  if (keycode != RAISE && raise_state.pressed) {
+    raise_state.other_key_pressed = true;
   }
 }
 
@@ -78,7 +70,7 @@ bool handle_tap_key(bool pressed, uint16_t pressed_time,
   // 離した時の単打判定
   if (timer_elapsed(pressed_time) < TAPPING_TERM && !other_pressed) {
     if (mod_key != KC_NO) unregister_os_specific_key(mod_key);
-    tap_code(keycode);
+    tap_os_specific_key(keycode);
     *code_sent = true;
     *released_time = record_time;
     *mod_key_pressed = false;
@@ -86,8 +78,7 @@ bool handle_tap_key(bool pressed, uint16_t pressed_time,
   }
 
   if (*repeat_active) {
-    unregister_code(keycode);
-    *repeat_active = false;
+     *repeat_active = false;
     *code_sent = false;
     return false;
   }
@@ -117,7 +108,7 @@ void apply_active_mods(uint16_t keycode) {
     register_os_specific_key(KC_LALT);
   }
   if (c_bspc_state.mods_active) {
-    register_os_specific_key(KC_LCTL);
+    register_os_specific_key(CC_LCTL);
   }
   if (c_spc_state.mods_active) {
     register_os_specific_key(KC_RCTL);
@@ -135,7 +126,6 @@ bool handle_lower_key(keyrecord_t *record) {
 
     lower_state.pressed = true;
     lower_state.pressed_time = record->event.time;
-    lower_state.other_key_pressed = false;
     lower_state.mods_active = true;
 
     layer_on(_LOWER);
@@ -172,7 +162,6 @@ bool handle_raise_key(keyrecord_t *record) {
 
     raise_state.pressed = true;
     raise_state.pressed_time = record->event.time;
-    raise_state.other_key_pressed = false;
     raise_state.mods_active = true;
 
     layer_on(_RAISE);
@@ -188,7 +177,6 @@ bool handle_raise_key(keyrecord_t *record) {
   raise_state.pressed = false;
   layer_off(_RAISE);
   update_tri_layer(_LOWER, _RAISE, _ADJUST);
-
   bool result = handle_tap_key(
       false, raise_state.pressed_time, &raise_state.released_time,
       &raise_state.code_sent, &raise_state.rapid_press,
@@ -203,6 +191,7 @@ bool handle_henkan_key(keyrecord_t *record) {
     henkan_state.pressed = true;
     henkan_state.pressed_time = record->event.time;
     henkan_state.mods_active = true;
+    register_os_specific_key(KC_RWIN);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&henkan_state);
@@ -213,7 +202,7 @@ bool handle_henkan_key(keyrecord_t *record) {
         false, henkan_state.pressed_time, &henkan_state.released_time,
         &henkan_state.code_sent, &henkan_state.rapid_press,
         &henkan_state.repeat_active, &henkan_state.mods_active,
-        henkan_state.other_key_pressed, KC_HENKAN, KC_RWIN, record->event.time);
+        henkan_state.other_key_pressed, HENKAN, KC_RWIN, record->event.time);
 
     // 状態リセット
     henkan_state.pressed = false;
@@ -233,9 +222,10 @@ bool handle_mhenkan_key(keyrecord_t *record) {
     mhenkan_state.pressed = true;
     mhenkan_state.pressed_time = record->event.time;
     mhenkan_state.mods_active = true;
+    register_os_specific_key(KC_LALT);
 
     // 他のキーが押されていることを記録
-    //    other_key_pressed_except(&mhenkan_state);
+    other_key_pressed_except(&mhenkan_state);
 
     return false;
   } else {
@@ -245,7 +235,7 @@ bool handle_mhenkan_key(keyrecord_t *record) {
         false, mhenkan_state.pressed_time, &mhenkan_state.released_time,
         &mhenkan_state.code_sent, &mhenkan_state.rapid_press,
         &mhenkan_state.repeat_active, &mhenkan_state.mods_active,
-        mhenkan_state.other_key_pressed, KC_MHENKAN, KC_LALT,
+        mhenkan_state.other_key_pressed, MHENKAN, KC_LALT,
         record->event.time);
 
     // 状態リセット
@@ -266,8 +256,8 @@ bool handle_c_bspc_key(keyrecord_t *record) {
     // キー押下時の共通処理
     c_bspc_state.pressed = true;
     c_bspc_state.pressed_time = record->event.time;
-    c_bspc_state.other_key_pressed = false;
     c_bspc_state.mods_active = true;
+    register_os_specific_key(KC_LCTL);
 
     // rapid_press判定（前回のタップからの継続かどうか）
     if (timer_elapsed(c_bspc_state.released_time) < TAPPING_TERM) {
@@ -286,11 +276,11 @@ bool handle_c_bspc_key(keyrecord_t *record) {
         false, c_bspc_state.pressed_time, &c_bspc_state.released_time,
         &c_bspc_state.code_sent, &c_bspc_state.rapid_press,
         &c_bspc_state.repeat_active, &c_bspc_state.mods_active,
-        c_bspc_state.other_key_pressed, KC_BSPC, KC_LCTL, record->event.time);
+        c_bspc_state.other_key_pressed, KC_BSPC, CC_LCTL, record->event.time);
 
     // 状態リセット
     c_bspc_state.pressed = false;
-    unregister_os_specific_key(KC_LCTL);
+    unregister_os_specific_key(CC_LCTL);
 
     return result;
   }
@@ -302,8 +292,8 @@ bool handle_c_spc_key(keyrecord_t *record) {
     // キー押下時の共通処理
     c_spc_state.pressed = true;
     c_spc_state.pressed_time = record->event.time;
-    c_spc_state.other_key_pressed = false;
     c_spc_state.mods_active = true;
+    register_os_specific_key(KC_RCTL);
 
     // 重要: rapid_press判定（前回のタップからの継続かどうか）
     if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {

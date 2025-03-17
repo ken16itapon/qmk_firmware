@@ -55,7 +55,7 @@ enum custom_keycodes { MHENKAN = NG_SAFE_RANGE, HENKAN, LOWER, RAISE, ADJUST };
 #define S_ENTER SFT_T(KC_ENT)
 #define C_SPACE CTL_T(KC_SPACE)
 // #define CS_TAB  TD(TD_CSTAB)  // 既存のCS_TABマクロを上書き
-#define C_BSPC  CTL_T(KC_BSPC)
+#define C   _BSPC  CTL_T(KC_BSPC)
 #define S_ESC   SFT_T(KC_ESC)
 #define COPILOT LSG(KC_F23)
 #define POWER   KC_KB_POWER

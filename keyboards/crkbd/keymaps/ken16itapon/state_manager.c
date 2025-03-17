@@ -67,6 +67,8 @@ void reset_rapid_press(void) {
   raise_state.rapid_press = false;
   c_bspc_state.rapid_press = false;
   c_spc_state.rapid_press = false;
+  henkan_state.rapid_press = false;
+  mhenkan_state.rapid_press = false;
 }
 
 // 指定したキー以外のrapid_pressをリセットする
@@ -75,14 +77,26 @@ void reset_rapid_press_except(key_state_t *target) {
   if (target != &raise_state) raise_state.rapid_press = false;
   if (target != &c_bspc_state) c_bspc_state.rapid_press = false;
   if (target != &c_spc_state) c_spc_state.rapid_press = false;
+  if (target != &henkan_state) henkan_state.rapid_press = false;
+  if (target != &mhenkan_state) mhenkan_state.rapid_press = false;
 }
 
-// すべてのキーのcode_sentフラグをセット
+void reset_key_pressed(void) {
+  lower_state.pressed = true;
+  raise_state.pressed = true;
+  c_bspc_state.pressed = true;
+  c_spc_state.pressed = true;
+  henkan_state.pressed = true;
+  mhenkan_state.pressed = true;
+}
+
 void reset_code_sent(void) {
   lower_state.code_sent = true;
   raise_state.code_sent = true;
   c_bspc_state.code_sent = true;
   c_spc_state.code_sent = true;
+  henkan_state.code_sent = true;
+  mhenkan_state.code_sent = true;
 }
 
 // 指定したキー以外のcode_sentをリセットする
@@ -91,6 +105,8 @@ void reset_code_sent_except(key_state_t *target) {
   if (target != &raise_state) raise_state.code_sent = true;
   if (target != &c_bspc_state) c_bspc_state.code_sent = true;
   if (target != &c_spc_state) c_spc_state.code_sent = true;
+  if (target != &henkan_state) henkan_state.code_sent = true;
+  if (target != &mhenkan_state) mhenkan_state.code_sent = true;
 }
 
 // すべてのキーが離されているか確認（シンプル版）
@@ -120,6 +136,13 @@ void clean_all_mods_key(void) {
   c_bspc_state.mods_active = false;
   henkan_state.mods_active = false;
   mhenkan_state.mods_active = false;
+  // すべての修飾キーを解除
+  unregister_code(KC_LCTL);
+  unregister_code(KC_LALT);
+  unregister_code(KC_LGUI);
+  unregister_code(KC_RCTL);
+  unregister_code(KC_RALT);
+  unregister_code(KC_RGUI);
 
   // 物理的な修飾キーも解除
   unregister_mods(MOD_MASK_CTRL | MOD_MASK_SHIFT | MOD_MASK_ALT | MOD_MASK_GUI);

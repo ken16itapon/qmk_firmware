@@ -38,8 +38,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define RGB_MATRIX_KEYPRESSES
 #endif
 
-#define TAPPING_TERM 200
-
+#define TAPPING_TERM 160
+#define TAP_CODE_DELAY 10
+                                                                                                                                 
 #define NG_NO_HENSHU
 #define NG_NO_KOYUMEISHI
 
@@ -56,7 +57,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // 既存の設定の後に追加
 
 // タップダンス設定
-#define TAPPING_TERM 200
 #define TAP_CODE_DELAY 10  // タップ間の遅延
-
-#define OS_DETECTION_ENABLE  // OS検出機能を有効化

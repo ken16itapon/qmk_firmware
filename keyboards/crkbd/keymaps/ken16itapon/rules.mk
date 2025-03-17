@@ -13,6 +13,7 @@ AUDIO_ENABLE = no           # Audio output
 WPM_ENABLE = no             # WPM calculation
 RGB_MATRIX_ENABLE = yes     # Enable RGB matrix effects
 UNICODE_ENABLE = yes         # Unicode
+OS_DETECTION_ENABLE = yes
 
 # 薙刀式配列用の定義
 NAGINATA_ENABLE = yes

@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "os_specific.h"    // OS関連の関数を使うために追加
 #include "state_manager.h"  // is_modifier関数を使うために追加
 
-
 enum {
   TD_CSTAB = 0,
 };
@@ -148,7 +147,7 @@ void matrix_scan_user(void) {
                          c_bspc_state.released_time,
                          &c_bspc_state.repeat_active, &c_bspc_state.code_sent,
                          &c_bspc_state.rapid_press,
-                         c_bspc_state.other_key_pressed, KC_BSPC, KC_LCTL);
+                         c_bspc_state.other_key_pressed, KC_BSPC, CC_LCTL);
 
   // Lower キー
   handle_advanced_repeat(lower_state.pressed, lower_state.pressed_time,
@@ -167,18 +166,22 @@ void matrix_scan_user(void) {
                          henkan_state.released_time,
                          &henkan_state.repeat_active, &henkan_state.code_sent,
                          &henkan_state.rapid_press,
-                         henkan_state.other_key_pressed, KC_HENKAN, KC_RWIN);
+                         henkan_state.other_key_pressed, HENKAN, KC_RWIN);
 
   // MHENKAN キー
   handle_advanced_repeat(mhenkan_state.pressed, mhenkan_state.pressed_time,
                          mhenkan_state.released_time,
                          &mhenkan_state.repeat_active, &mhenkan_state.code_sent,
                          &mhenkan_state.rapid_press,
-                         mhenkan_state.other_key_pressed, KC_MHENKAN, KC_LALT);
+                         mhenkan_state.other_key_pressed, MHENKAN, KC_LALT);
 
   // 既存の自動リセット処理
-  if (all_keys_released() && timer_elapsed(all_keys_released_time) > 1000) {
+  if (all_keys_released() &&
+      timer_elapsed(all_keys_released_time) > TAPPING_TERM * 2) {
+    reset_key_pressed();
+    reset_rapid_press();
     reset_other_key_pressed();
+    reset_code_sent();
     clean_all_mods_key();
   }
 }
@@ -192,7 +195,7 @@ void cstab_finished(tap_dance_state_t *state, void *user_data) {
     } else {
       // 他のキーと同時押し: CTRL+SHIFT
       cs_tab_state.mods_active = true;
-      register_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+      register_mods(get_os_specific_mod_bit(KC_LCTL) | MOD_BIT(KC_LSFT));
     }
   } else if (state->count == 2) {
     // ダブルタップ: ESC
@@ -206,7 +209,7 @@ void cstab_reset(tap_dance_state_t *state, void *user_data) {
     if (state->interrupted || !state->pressed) {
       unregister_code(KC_TAB);
     } else if (cs_tab_state.mods_active) {
-      unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+      unregister_mods(get_os_specific_mod_bit(KC_LCTL) | MOD_BIT(KC_LSFT));
       clean_all_mods_key();
     }
   } else if (state->count == 2) {
@@ -214,7 +217,7 @@ void cstab_reset(tap_dance_state_t *state, void *user_data) {
   }
   // 安全のため、必ず修飾キーをクリア
   if (cs_tab_state.mods_active) {
-    unregister_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+    unregister_mods(get_os_specific_mod_bit(KC_LCTL) | MOD_BIT(KC_LSFT));
     clean_all_mods_key();
   }
 }
@@ -283,8 +286,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     case _ADJUST:
       clean_all_mods_key();
       reset_rapid_press();
-      lower_state.other_key_pressed = true;
-      raise_state.other_key_pressed = true;
+      set_other_key_pressed();
       rgb_matrix_sethsv(HSV_YELLOW);
       break;
   }
@@ -295,8 +297,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   // 全キー共通の前処理
   if (record->event.pressed) {
     handle_key_press_init(keycode);
+
   } else {
     if (all_keys_released()) {
+      reset_key_pressed();
       all_keys_released_time = record->event.time;
     }
   }
@@ -353,17 +357,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return handle_c_bspc_key(record);
 
     default:
-      if (record->event.pressed) {
-        if (is_modifier(keycode)) {
-          return true;
-        } else {
-          if (get_mods_active()) {
-            apply_active_mods(keycode);
-            tap_code(keycode);
-            return false;
-          }
-          return true;
-        }
+      reset_code_sent();
+      set_other_key_pressed();
+      if (record->event.pressed && !is_modifier(keycode) && get_mods_active()) {
+        apply_active_mods(keycode);
       }
   }
 

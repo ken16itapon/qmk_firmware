@@ -12,69 +12,99 @@ keyboard_os_t global_os_cache = OS_MACOS;  // デフォルトでmacOSに設定;
 
 // OSの種類を取得する関数
 keyboard_os_t get_current_os(void) {
+  // OS_UNSUREではなく、OS_AUTO（CRKBD_OS_AUTO）を使用
+  if (current_os_mode == OS_AUTO) {
+// 自動検出モード
 #ifdef OS_DETECTION_ENABLE
-  if (current_os_mode == OS_UNSURE) {
-    return detected_host_os();
-  }
+    // QMK組み込みの検出機能を使用
+    os_variant_t detected = detected_host_os();
+    switch (detected) {
+      case OS_WINDOWS:
+        return OS_WINDOWS;
+      case OS_MACOS:
+        return OS_MACOS;
+      case OS_LINUX:
+        return OS_LINUX;
+      default:
+        return OS_MACOS;  // デフォルトはMacOS
+    }
+#else
+    // 検出機能が無効なら、デフォルトを返す
+    return OS_MACOS;
 #endif
+  }
+
+  // 明示的なモード設定
   return current_os_mode;
 }
 
 // 元のキーコードとOSの種類から、適切なキーコードに変換する関数
 uint16_t get_os_specific_keycode(uint16_t keycode) {
-  GET_OS();
+  // 現在のOSを取得（グローバル変数への副作用を避けるため直接関数呼び出し）
+  keyboard_os_t current_os = get_current_os();
 
-  // 基本キーはOS関係なく同じなので、修飾キーのみ変換
+  // デバッグ用
+  // dprintf("Converting keycode %d for OS %d\n", keycode, current_os);
+
+  // 共通キー（CC_*）は直接対応するキーコードを返す
   switch (keycode) {
-    // 左側修飾キー
-    case KC_LCTL:
-      return (global_os_cache == OS_MACOS) ? MC_LCTL : KC_LCTL;
-    case KC_LGUI:  // GUI/Win/Commandキー
-      return (global_os_cache == OS_MACOS) ? MC_LWIN : KC_LGUI;
-    case KC_LALT:
-      return (global_os_cache == OS_MACOS) ? MC_LALT : KC_LALT;
+    case CC_LCTL:
+      return KC_LCTL;
+    case CC_LALT:
+      return KC_LALT;
+    case CC_LWIN:
+      return KC_LGUI;
+    case CC_RCTL:
+      return KC_RCTL;
+    case CC_RALT:
+      return KC_RALT;
+    case CC_RWIN:
+      return KC_RGUI;
+  }
 
-    // 右側修飾キー
-    case KC_RCTL:
-      return (global_os_cache == OS_MACOS) ? MC_RCTL : KC_RCTL;
-    case KC_RGUI:  // GUI/Win/Commandキー
-      return (global_os_cache == OS_MACOS) ? MC_RWIN : KC_RGUI;
-    case KC_RALT:
-      return (global_os_cache == OS_MACOS) ? MC_RALT : KC_RALT;
+  // OS固有のキーマッピング
+  if (current_os == OS_MACOS) {
+    // macOS用キーマッピング
+    switch (keycode) {
+      // 修飾キー
+      case KC_LCTL:
+        return KC_LCMD;  // Left Control -> Left Command
+      case KC_LGUI:
+        return KC_LOPT;  // Left GUI -> Left Option
+      case KC_LALT:
+        return KC_LCTL;  // Left Alt -> Left Control
+      case KC_RCTL:
+        return KC_RCMD;
+      case KC_RGUI:
+        return KC_ROPT;
+      case KC_RALT:
+        return KC_RCTL;
 
-    // 修飾キーのビットマスク（直接mods用）
-    case MOD_LCTL:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_LCTL)
-                                           : MOD_BIT(KC_LCTL);
-    case MOD_LGUI:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_LWIN)
-                                           : MOD_BIT(KC_LGUI);
-    case MOD_LALT:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_LALT)
-                                           : MOD_BIT(KC_LALT);
-    case MOD_RCTL:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_RCTL)
-                                           : MOD_BIT(KC_RCTL);
-    case MOD_RGUI:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_RWIN)
-                                           : MOD_BIT(KC_RGUI);
-    case MOD_RALT:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_RALT)
-                                           : MOD_BIT(KC_RALT);
+      // IME関連キー
+      case HENKAN:
+        return MC_HENKAN;  // 変換キー
+      case MHENKAN:
+        return MC_MHENKAN;  // 無変換キー
 
-    // IME関連キー
-    case KC_HENKAN:  // IME有効化
-      return (global_os_cache == OS_MACOS) ? MC_HENKAN : KC_HENKAN;
-    case KC_MHENKAN:  // IME無効化
-      return (global_os_cache == OS_MACOS) ? MC_MHENKAN : KC_MHENKAN;
+      default:
+        return keycode;
+    }
+  } else {
+    // Windows/Linuxなど他のOSのキーマッピング
+    switch (keycode) {
+      // IME関連キー（Windows固有のものがあれば追加）
+      case HENKAN:
+        return WC_HENKAN;  // 変換キー
+      case MHENKAN:
+        return WC_MHENKAN;  // 無変換キー
 
-    // その他のキーは変換せずそのまま返す
-    default:
-      return keycode;
+      default:
+        return keycode;
+    }
   }
 }
 
-// キーコードに対応するモディファイアビットを取得
+// キーコードに対応するモディファイアビットを取
 uint8_t get_os_specific_mod_bit(uint16_t keycode) {
   GET_OS();
 
@@ -183,16 +213,61 @@ keyboard_os_t eeconfig_read_os_mode(void) {
   return (keyboard_os_t)os_mode;
 }
 
+
+// OS固有の状態をリセット
+void reset_os_specific_states(void) {
+  // すべてのキー状態をリセット
+  henkan_state.mods_active = false;
+  henkan_state.other_key_pressed = false;
+  henkan_state.code_sent = false;
+  henkan_state.repeat_active = false;
+
+  mhenkan_state.mods_active = false;
+  mhenkan_state.other_key_pressed = false;
+  mhenkan_state.code_sent = false;
+  mhenkan_state.repeat_active = false;
+
+  // 他のキー状態も同様にリセット
+  c_bspc_state.mods_active = false;
+  c_spc_state.mods_active = false;
+  lower_state.mods_active = false;
+  raise_state.mods_active = false;
+}
+
 // OSモードを設定する関数
 void set_os_mode(keyboard_os_t os) {
+  // 前に押されていたキーをすべて解除
+  clean_all_mods_key();
+
+  // キー状態をリセット
+  reset_os_specific_states();
+
   // モードを変更して保存
   global_os_cache = os;
+  current_os_mode = os;
 
-  // EEPROMに保存して再起動後も保持
+  // EEPROMに保存（後で読み込めるように）
   eeconfig_update_os_mode(os);
 
   // デバッグ情報
   dprintf("OS Mode set to: %d\n", os);
+
+// RGB LEDでフィードバック
+#ifdef RGB_MATRIX_ENABLE
+  switch (os) {
+    case OS_MACOS:
+      rgb_matrix_sethsv(HSV_CYAN);
+      break;
+    case OS_WINDOWS:
+      rgb_matrix_sethsv(HSV_PURPLE);
+      break;
+    case OS_AUTO:
+      rgb_matrix_sethsv(HSV_GREEN);
+      break;
+    default:
+      break;
+  }
+#endif
 
 // 状態表示LEDなど、必要であれば設定
 #ifdef RGB_MATRIX_ENABLE
