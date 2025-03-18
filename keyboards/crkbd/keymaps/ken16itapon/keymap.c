@@ -35,7 +35,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
        C_BSPC,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D, XXXXXXX,     KC_EQL,    KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-        S_ESC,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
+      KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
                                           MHENKAN,   LOWER,   C_SPC,    S_ENTER,   RAISE,  HENKAN
                                       //`--------------------------'  `--------------------------'
@@ -96,11 +96,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
        KC_TAB,   KC_P7,   KC_P8,   KC_P9,    KC_P, KC_BSPC, _______,    _______, KC_COMM,   KC_P7,   KC_P8,   KC_P9,    KC_P, KC_BSPC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      OA_LCTL, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PMNS, _______,    _______, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PMNS, KC_PSLS,
+      KC_LCTL, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PMNS, _______,    _______, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PMNS, KC_PSLS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
       KC_LSFT,   KC_P0,   KC_P1,   KC_P2,   KC_P3, KC_PPLS,                        KC_P0,   KC_P1,   KC_P2,   KC_P3, KC_PPLS, KC_PAST,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          OA_LWIN,   MO(1),  KC_SPC,     KC_ENT,   MO(2), OA_RALT
+                                          KC_LWIN,   MO(1),  KC_SPC,     KC_ENT,   MO(2), KC_RALT
                                       //`--------------------------'  `--------------------------'
 
   )
@@ -133,47 +133,13 @@ void matrix_init_user(void) {
 
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
-  // スリープ・電源管理関係の処理はそのまま残す
-
-  // 全てのキーのリピート処理を追加
-  // C_SPC キー
-  handle_advanced_repeat(c_spc_state.pressed, c_spc_state.pressed_time,
-                         c_spc_state.released_time, &c_spc_state.repeat_active,
-                         &c_spc_state.code_sent, &c_spc_state.rapid_press,
-                         c_spc_state.other_key_pressed, KC_SPC, KC_RCTL);
-
-  // C_BSPC キー
-  handle_advanced_repeat(c_bspc_state.pressed, c_bspc_state.pressed_time,
-                         c_bspc_state.released_time,
-                         &c_bspc_state.repeat_active, &c_bspc_state.code_sent,
-                         &c_bspc_state.rapid_press,
-                         c_bspc_state.other_key_pressed, KC_BSPC, CC_LCTL);
-
-  // Lower キー
-  handle_advanced_repeat(lower_state.pressed, lower_state.pressed_time,
-                         lower_state.released_time, &lower_state.repeat_active,
-                         &lower_state.code_sent, &lower_state.rapid_press,
-                         lower_state.other_key_pressed, KC_BSPC, KC_NO);
-
-  // Raise キー
-  handle_advanced_repeat(raise_state.pressed, raise_state.pressed_time,
-                         raise_state.released_time, &raise_state.repeat_active,
-                         &raise_state.code_sent, &raise_state.rapid_press,
-                         raise_state.other_key_pressed, KC_SPC, KC_NO);
-
-  // HENKAN キー
-  handle_advanced_repeat(henkan_state.pressed, henkan_state.pressed_time,
-                         henkan_state.released_time,
-                         &henkan_state.repeat_active, &henkan_state.code_sent,
-                         &henkan_state.rapid_press,
-                         henkan_state.other_key_pressed, HENKAN, KC_RWIN);
-
-  // MHENKAN キー
-  handle_advanced_repeat(mhenkan_state.pressed, mhenkan_state.pressed_time,
-                         mhenkan_state.released_time,
-                         &mhenkan_state.repeat_active, &mhenkan_state.code_sent,
-                         &mhenkan_state.rapid_press,
-                         mhenkan_state.other_key_pressed, MHENKAN, KC_LALT);
+  // 各キーの状態を処理 - 簡略化された呼び出し
+  handle_advanced_repeat(&henkan_state);
+  handle_advanced_repeat(&mhenkan_state);
+  handle_advanced_repeat(&c_spc_state);
+  handle_advanced_repeat(&c_bspc_state);
+  handle_advanced_repeat(&lower_state);
+  handle_advanced_repeat(&raise_state);
 
   // 既存の自動リセット処理
   if (all_keys_released() &&
@@ -186,16 +152,17 @@ void matrix_scan_user(void) {
   }
 }
 
-// タップダンス終了時の処理
+// CS_TAB キーのタップダンス処理
 void cstab_finished(tap_dance_state_t *state, void *user_data) {
   if (state->count == 1) {
     if (state->interrupted || !state->pressed) {
       // 単体タップ: TAB
       register_code(KC_TAB);
     } else {
-      // 他のキーと同時押し: CTRL+SHIFT
-      cs_tab_state.mods_active = true;
-      register_mods(get_os_specific_mod_bit(KC_LCTL) | MOD_BIT(KC_LSFT));
+      // 長押し: CTRL+SHIFT
+      cs_tab_state.is_pressed = true;
+      // 修飾キー関数を使用して複数の修飾キーを登録
+      register_mods_for_key(&cs_tab_state);
     }
   } else if (state->count == 2) {
     // ダブルタップ: ESC
@@ -203,22 +170,24 @@ void cstab_finished(tap_dance_state_t *state, void *user_data) {
   }
 }
 
-// タップダンスリセット時の処理
 void cstab_reset(tap_dance_state_t *state, void *user_data) {
   if (state->count == 1) {
     if (state->interrupted || !state->pressed) {
       unregister_code(KC_TAB);
-    } else if (cs_tab_state.mods_active) {
-      unregister_mods(get_os_specific_mod_bit(KC_LCTL) | MOD_BIT(KC_LSFT));
-      clean_all_mods_key();
+    } else if (cs_tab_state.is_pressed) {
+      // 修飾キー関数を使用して複数の修飾キーを解除
+      unregister_mods_for_key(&cs_tab_state);
+      cs_tab_state.is_pressed = false;
     }
   } else if (state->count == 2) {
     unregister_code(KC_ESC);
   }
-  // 安全のため、必ず修飾キーをクリア
-  if (cs_tab_state.mods_active) {
-    unregister_mods(get_os_specific_mod_bit(KC_LCTL) | MOD_BIT(KC_LSFT));
-    clean_all_mods_key();
+
+  // 安全のため、必ず状態をリセット
+  if (cs_tab_state.is_pressed) {
+    cs_tab_state.is_pressed = false;
+    // 修飾キー関数を使用
+    unregister_mods_for_key(&cs_tab_state);
   }
 }
 
@@ -243,6 +212,9 @@ void keyboard_post_init_user(void) {
   } else {
     set_os_mode(OS_MACOS);  // デフォルトはMacOS
   }
+
+  // キー状態の初期化を追加
+  initialize_key_states();
 
   // 薙刀式の初期化など、他の初期化処理
   naginata_clear();
@@ -359,7 +331,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     default:
       reset_code_sent();
       set_other_key_pressed();
-      if (record->event.pressed && !is_modifier(keycode) && get_mods_active()) {
+      if (record->event.pressed && !is_modifier(keycode) && !get_mods_active()) {
         apply_active_mods(keycode);
       }
   }

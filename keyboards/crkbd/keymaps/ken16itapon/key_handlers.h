@@ -16,17 +16,9 @@ extern key_state_t mhenkan_state;
 void handle_key_press_init(uint16_t keycode);
 
 // キー処理関数
-bool handle_tap_key(bool pressed, uint16_t pressed_time,
-                    uint16_t *released_time, bool *code_sent, bool *rapid_press,
-                    bool *repeat_active, bool *mod_key_pressed,
-                    bool other_pressed, uint16_t keycode, uint16_t mod_key,
-                    uint16_t record_time);
+bool handle_tap_key(key_state_t *state, uint16_t record_time);
 
-void handle_advanced_repeat(bool is_pressed, uint16_t pressed_time,
-                            uint16_t released_time, bool *active_flag,
-                            bool *code_sent, bool *rapid_press_flag,
-                            bool other_key_pressed, uint16_t keycode,
-                            uint16_t mod_key);
+void handle_advanced_repeat(key_state_t *state);
 
 // 個別キーハンドラー関数
 bool handle_lower_key(keyrecord_t *record);

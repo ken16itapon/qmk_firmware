@@ -43,9 +43,6 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
   // 現在のOSを取得（グローバル変数への副作用を避けるため直接関数呼び出し）
   keyboard_os_t current_os = get_current_os();
 
-  // デバッグ用
-  // dprintf("Converting keycode %d for OS %d\n", keycode, current_os);
-
   // 共通キー（CC_*）は直接対応するキーコードを返す
   switch (keycode) {
     case CC_LCTL:
@@ -217,21 +214,13 @@ keyboard_os_t eeconfig_read_os_mode(void) {
 // OS固有の状態をリセット
 void reset_os_specific_states(void) {
   // すべてのキー状態をリセット
-  henkan_state.mods_active = false;
   henkan_state.other_key_pressed = false;
   henkan_state.code_sent = false;
   henkan_state.repeat_active = false;
 
-  mhenkan_state.mods_active = false;
   mhenkan_state.other_key_pressed = false;
   mhenkan_state.code_sent = false;
   mhenkan_state.repeat_active = false;
-
-  // 他のキー状態も同様にリセット
-  c_bspc_state.mods_active = false;
-  c_spc_state.mods_active = false;
-  lower_state.mods_active = false;
-  raise_state.mods_active = false;
 }
 
 // OSモードを設定する関数

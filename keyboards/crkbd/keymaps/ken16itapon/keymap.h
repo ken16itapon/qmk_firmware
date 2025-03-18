@@ -22,9 +22,6 @@ enum custom_keycodes {
   WIN_MODE,
   LINUX_MODE,
   OS_DISP,
-  OA_LCTL,
-  OA_LWIN,
-  OA_RALT,
   C_SPC,
   C_BSPC
 };
@@ -34,7 +31,6 @@ enum layers { _BASE = 0, _NAGINATA, _LOWER, _RAISE, _ADJUST, _10KEY };
 
 #define S_ENTER SFT_T(KC_ENT)
 
-#define S_ESC SFT_T(KC_ESC)
 #define COPILOT LSG(KC_F23)
 #define POWER KC_KB_POWER
 #define S_CAPS LSFT(KC_CAPS)
