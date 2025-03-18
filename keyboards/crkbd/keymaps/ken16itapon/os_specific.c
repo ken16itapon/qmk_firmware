@@ -141,7 +141,16 @@ void unregister_os_specific_key(uint16_t keycode) {
 
 void tap_os_specific_key(uint16_t keycode) {
   uint16_t os_keycode = get_os_specific_keycode(keycode);
-  tap_code(os_keycode);
+
+  uint8_t mods = get_mods();
+
+  if (mods) {
+    uint16_t mod_keycode = (mods << 8) | os_keycode;
+    tap_code16(mod_keycode);
+  } else {
+    register_code(os_keycode);
+    unregister_code(os_keycode);
+  }
 }
 
 void register_os_specific_mods(uint16_t keycode) {

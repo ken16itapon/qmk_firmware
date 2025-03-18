@@ -173,12 +173,18 @@ bool get_mods_active(void) {
          cs_tab_state.is_pressed;
 }
 
-// 全てのキーのis_pressedがfalseかどうかを返す
+/**
+ * すべてのキー（修飾キー含む）が解放されているかどうかを確認
+ * @return 全キーが解放されていればtrue
+ */
 bool all_keys_released(void) {
-  return !lower_state.is_pressed && !raise_state.is_pressed &&
-         !c_spc_state.is_pressed && !c_bspc_state.is_pressed &&
-         !henkan_state.is_pressed && !mhenkan_state.is_pressed &&
-         !cs_tab_state.is_pressed;
+  // キーボードマトリクス全体をスキャン
+  for (uint8_t r = 0; r < MATRIX_ROWS; r++) {
+    if (matrix_get_row(r) > 0) {
+      return false;  // いずれかのキーがオン
+    }
+  }
+  return true;  // すべてのキーがオフ
 }
 
 // 全ての修飾キーを解除する
@@ -189,24 +195,20 @@ void clean_all_mods_key(void) {
   unregister_mods_for_key(&c_bspc_state);
   unregister_mods_for_key(&c_spc_state);
   unregister_mods_for_key(&cs_tab_state);
-
-  // 安全のために他の修飾キーもクリア
-  clear_mods();
-  send_keyboard_report();
 }
 
 // キーがモディファイアかどうかを返す
 bool is_modifier(uint16_t keycode) {
-    return IS_MODIFIER_KEYCODE(keycode);
-//   switch (keycode) {
-//     case KC_LCTL:
-//     case KC_RCTL:
-//     case KC_LWIN:
-//     case KC_RWIN:
-//     case KC_RALT:
-//     case KC_LSFT:
-//     case KC_RSFT:
-//       return true;
-//   }
-//   return false;
+  return IS_MODIFIER_KEYCODE(keycode);
+  //   switch (keycode) {
+  //     case KC_LCTL:
+  //     case KC_RCTL:
+  //     case KC_LWIN:
+  //     case KC_RWIN:
+  //     case KC_RALT:
+  //     case KC_LSFT:
+  //     case KC_RSFT:
+  //       return true;
+  //   }
+  //   return false;
 }

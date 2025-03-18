@@ -13,7 +13,7 @@ void handle_advanced_repeat(key_state_t *state) {
 
   // リピート開始条件判定
   if (!state->is_pressed || state->other_key_pressed || !state->code_sent ||
-      state->repeat_active || !state->rapid_press || layer_state_is(_ADJUST) ||
+      !state->rapid_press || layer_state_is(_ADJUST) ||
       timer_elapsed(state->pressed_time) < TAPPING_TERM) {
     return;
   }
@@ -25,7 +25,7 @@ void handle_advanced_repeat(key_state_t *state) {
 
   state->code_sent = false;
   state->repeat_active = true;
-  register_code(state->keycode);
+  register_os_specific_key(state->keycode);
 }
 
 // キー押下時の初期化処理
@@ -53,8 +53,7 @@ void handle_key_press_init(uint16_t keycode) {
 // 単打判定と対応キー送信処理 - 構造体へのポインタを使用
 bool handle_tap_key(key_state_t *state, uint16_t record_time) {
   // 離した時の単打判定
-  if (timer_elapsed(state->pressed_time) < TAPPING_TERM &&
-      !state->other_key_pressed) {
+  if (timer_elapsed(state->pressed_time) < TAPPING_TERM) {
     // 修飾キーがあれば解除
     if (state->mod_count > 0) {
       unregister_mods_for_key(state);
@@ -67,6 +66,7 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
   }
 
   if (state->repeat_active) {
+    unregister_os_specific_key(state->keycode);
     state->repeat_active = false;
     state->code_sent = false;
   }
@@ -126,7 +126,6 @@ bool handle_lower_key(keyrecord_t *record) {
     update_tri_layer(_LOWER, _RAISE, _ADJUST);
     if (layer_state_is(_ADJUST)) {
       lower_state.rapid_press = false;
-      lower_state.code_sent = true;
     }
     return false;
   }
