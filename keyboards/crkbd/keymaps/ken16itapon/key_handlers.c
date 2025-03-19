@@ -173,19 +173,24 @@ bool handle_raise_key(keyrecord_t *record) {
 bool handle_henkan_key(keyrecord_t *record) {
   if (record->event.pressed) {
     // キー押下時の共通処理
+
+
     henkan_state.is_pressed = true;
     henkan_state.pressed_time = record->event.time;
 
-    // 修飾キーを登録
-    register_mods_for_key(&henkan_state);
+  //  register_mods_for_key(&henkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&henkan_state);
 
     return false;
   } else {
+
     // キー離し時の処理 - 簡略化された呼び出し
+    henkan_state.is_pressed = false;
+    unregister_mods_for_key(&henkan_state);
     bool result = handle_tap_key(&henkan_state, record->event.time);
+
 
     // タップ時の追加処理（薙刀式オン）
     if (henkan_state.code_sent) {
@@ -203,7 +208,7 @@ bool handle_mhenkan_key(keyrecord_t *record) {
     // mhenkan_state.mods_active = true;  // 削除
 
     // 修飾キー関数を使用
-    register_mods_for_key(&mhenkan_state);
+  //  register_mods_for_key(&mhenkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&mhenkan_state);

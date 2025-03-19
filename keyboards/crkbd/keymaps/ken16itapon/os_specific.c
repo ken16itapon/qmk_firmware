@@ -47,16 +47,6 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
   switch (keycode) {
     case CC_LCTL:
       return KC_LCTL;
-    case CC_LALT:
-      return KC_LALT;
-    case CC_LWIN:
-      return KC_LGUI;
-    case CC_RCTL:
-      return KC_RCTL;
-    case CC_RALT:
-      return KC_RALT;
-    case CC_RWIN:
-      return KC_RGUI;
   }
 
   // OS固有のキーマッピング
@@ -66,13 +56,13 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
       // 修飾キー
       case KC_LCTL:
         return KC_LCMD;  // Left Control -> Left Command
-      case KC_LGUI:
+      case KC_LWIN:
         return KC_LOPT;  // Left GUI -> Left Option
       case KC_LALT:
         return KC_LCTL;  // Left Alt -> Left Control
       case KC_RCTL:
         return KC_RCMD;
-      case KC_RGUI:
+      case KC_RWIN:
         return KC_ROPT;
       case KC_RALT:
         return KC_RCTL;
@@ -107,22 +97,22 @@ uint8_t get_os_specific_mod_bit(uint16_t keycode) {
 
   switch (keycode) {
     case KC_LCTL:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_LCTL)
+      return (global_os_cache == OS_MACOS) ? MOD_BIT(KC_LCMD)
                                            : MOD_BIT(KC_LCTL);
     case KC_LGUI:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_LWIN)
+      return (global_os_cache == OS_MACOS) ? MOD_BIT(KC_LOPT)
                                            : MOD_BIT(KC_LGUI);
     case KC_LALT:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_LALT)
+      return (global_os_cache == OS_MACOS) ? MOD_BIT(KC_LCTL)
                                            : MOD_BIT(KC_LALT);
     case KC_RCTL:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_RCTL)
+      return (global_os_cache == OS_MACOS) ? MOD_BIT(KC_RCMD)
                                            : MOD_BIT(KC_RCTL);
     case KC_RGUI:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_RWIN)
+      return (global_os_cache == OS_MACOS) ? MOD_BIT(KC_ROPT)
                                            : MOD_BIT(KC_RGUI);
     case KC_RALT:
-      return (global_os_cache == OS_MACOS) ? MOD_BIT(MC_RALT)
+      return (global_os_cache == OS_MACOS) ? MOD_BIT(KC_RCTL)
                                            : MOD_BIT(KC_RALT);
     default:
       return 0;
@@ -219,7 +209,6 @@ keyboard_os_t eeconfig_read_os_mode(void) {
   return (keyboard_os_t)os_mode;
 }
 
-
 // OS固有の状態をリセット
 void reset_os_specific_states(void) {
   // すべてのキー状態をリセット
@@ -246,9 +235,6 @@ void set_os_mode(keyboard_os_t os) {
 
   // EEPROMに保存（後で読み込めるように）
   eeconfig_update_os_mode(os);
-
-  // デバッグ情報
-  dprintf("OS Mode set to: %d\n", os);
 
 // RGB LEDでフィードバック
 #ifdef RGB_MATRIX_ENABLE
@@ -287,32 +273,49 @@ void set_os_mode(keyboard_os_t os) {
 #endif
 }
 
-// OS表示処理
+// os_specific.c に追加
 bool handle_os_display(void) {
-  // 現在のOSモードを取得
-  GET_OS();
+  // 現在のOS設定を表示
+  // get_os_mode() を get_current_os() に変更
+  keyboard_os_t current = get_current_os();
 
-  // デバッグ出力
-  dprintf("Current OS: %d\n", global_os_cache);
-
-// RGBマトリックスでOS表示
-#ifdef RGB_MATRIX_ENABLE
-  switch (global_os_cache) {
+  // 以下は同じ
+  const char* os_name = "Unknown";
+  switch (current) {
+    case OS_AUTO:
+      os_name = "Auto";
+      break;
     case OS_MACOS:
-      rgb_matrix_sethsv(HSV_CYAN);  // macOS:青色
+      os_name = "macOS";
       break;
     case OS_WINDOWS:
-      rgb_matrix_sethsv(HSV_PURPLE);  // Windows:紫色
+      os_name = "Windows";
       break;
     case OS_LINUX:
-      rgb_matrix_sethsv(HSV_YELLOW);  // Linux:黄色
+      os_name = "Linux";
       break;
-    case OS_AUTO:
     default:
-      rgb_matrix_sethsv(HSV_GREEN);  // 自動検出:緑色
       break;
   }
-#endif
 
-  return false;  // キー処理を続けない
+  SEND_STRING(os_name);
+
+  // ここでLEDフラッシュなどの視覚的フィードバックを追加
+  // OS_MACOSなら2回点滅、OS_WINDOWSなら3回点滅など
+  uint8_t blink_count = current + 1;  // 1=Auto, 2=macOS, 3=Windowsなど
+
+  for (uint8_t i = 0; i < blink_count; i++) {
+    // LED点灯（白色など目立つ色）
+    rgb_matrix_sethsv(HSV_WHITE);
+    wait_ms(100);
+
+    // LED消灯
+    rgb_matrix_sethsv(HSV_BLACK);
+    wait_ms(100);
+  }
+
+  // 元の色に戻す
+  layer_state_set_user(layer_state);
+
+  return false;
 }

@@ -23,8 +23,10 @@ enum custom_keycodes {
   LINUX_MODE,
   OS_DISP,
   C_SPC,
-  C_BSPC
-};
+  C_BSPC,
+
+  CC_LCTL
+  };
 
 // レイヤー定義
 enum layers { _BASE = 0, _NAGINATA, _LOWER, _RAISE, _ADJUST, _10KEY };

@@ -134,7 +134,15 @@ void matrix_init_user(void) {
 // matrix_scan_user関数内
 void matrix_scan_user(void) {
   // 各キーの状態を処理 - 簡略化された呼び出し
+  if (timer_elapsed(henkan_state.pressed_time) > TAPPING_TERM &&
+      henkan_state.is_pressed) {
+    register_os_specific_key(KC_RWIN);
+  }
   handle_advanced_repeat(&henkan_state);
+  if (timer_elapsed(mhenkan_state.pressed_time) > TAPPING_TERM &&
+      mhenkan_state.is_pressed) {
+    register_os_specific_key(KC_LALT);
+  }
   handle_advanced_repeat(&mhenkan_state);
   handle_advanced_repeat(&c_spc_state);
   handle_advanced_repeat(&c_bspc_state);
@@ -228,11 +236,6 @@ void keyboard_post_init_user(void) {
   // 最大輝度を設定（LEDが多すぎると電力不足になることがある）
   rgb_matrix_set_speed(128);            // 中程度の速度
   rgb_matrix_set_color_all(0, 255, 0);  // 緑色に設定（全LEDを点灯）
-
-  // デバッグ情報の出力
-  dprintf("RGB Matrix Status: %d\n", rgb_matrix_is_enabled());
-  dprintf("LED Config: %d LEDs, Mode: %d\n", DRIVER_LED_TOTAL,
-          rgb_matrix_get_mode());
 }
 
 layer_state_t layer_state_set_user(layer_state_t state) {
@@ -314,7 +317,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
 
     case OS_DISP:
-      return handle_os_display();
+      if (record->event.pressed) {
+        return handle_os_display();
+      }
+      return false;
 
     case MHENKAN:
       return handle_mhenkan_key(record);
@@ -331,7 +337,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     default:
       reset_code_sent();
       set_other_key_pressed();
-      if (record->event.pressed && !is_modifier(keycode) && !get_mods_active()) {
+      if (record->event.pressed && !is_modifier(keycode) &&
+          !get_mods_active()) {
         apply_active_mods(keycode);
       }
   }

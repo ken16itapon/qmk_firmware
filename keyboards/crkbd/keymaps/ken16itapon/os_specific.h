@@ -6,23 +6,7 @@
 // 前方宣言
 enum custom_keycodes;
 
-// OSに依存しない共通キー定義（常に同じキーコードを送信）
-#define CC_LCTL KC_LCTL  // 常に左Control
-#define CC_LWIN KC_LGUI  // 常に左GUI (Win/Cmd)
-#define CC_LALT KC_LALT  // 常に左Alt
-#define CC_RCTL KC_RCTL  // 常に右Control
-#define CC_RWIN KC_RGUI  // 常に右GUI
-#define CC_RALT KC_RALT  // 常に右Alt
-
-// macOS固有のキーコード定義
-#define MC_LCTL KC_LCMD  // Command
-#define MC_LWIN KC_LOPT  // Option
-#define MC_LALT KC_LCTL  // Control
-#define MC_RCTL KC_RCMD
-#define MC_RWIN KC_ROPT
-#define MC_RALT KC_RCTL
-
-// 変換/無変換キーの定義
+// 変換/無変換キーの定義q
 #define MC_HENKAN KC_LNG1   // macOSでの変換キー
 #define MC_MHENKAN KC_LNG2  // macOSでの無変換キー
 #define WC_HENKAN KC_INT4   // WindowsでのIME有効化

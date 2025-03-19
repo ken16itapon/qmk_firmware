@@ -200,15 +200,4 @@ void clean_all_mods_key(void) {
 // キーがモディファイアかどうかを返す
 bool is_modifier(uint16_t keycode) {
   return IS_MODIFIER_KEYCODE(keycode);
-  //   switch (keycode) {
-  //     case KC_LCTL:
-  //     case KC_RCTL:
-  //     case KC_LWIN:
-  //     case KC_RWIN:
-  //     case KC_RALT:
-  //     case KC_LSFT:
-  //     case KC_RSFT:
-  //       return true;
-  //   }
-  //   return false;
 }
