@@ -30,7 +30,7 @@ bool handle_mhenkan_key(keyrecord_t *record);
 
 // 修飾キー処理
 bool handle_modifier_key(bool pressed, uint16_t keycode);
-void apply_active_mods(uint16_t keycode);
+void apply_active_mods(void);
 
 // キー状態設定関数 - これらを追加
 void other_key_pressed_except(key_state_t *target);

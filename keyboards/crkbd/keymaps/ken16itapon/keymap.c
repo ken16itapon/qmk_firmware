@@ -136,12 +136,12 @@ void matrix_scan_user(void) {
   // 各キーの状態を処理 - 簡略化された呼び出し
   if (timer_elapsed(henkan_state.pressed_time) > TAPPING_TERM &&
       henkan_state.is_pressed) {
-    register_os_specific_key(KC_RWIN);
+    register_mods_for_key(&henkan_state);
   }
   handle_advanced_repeat(&henkan_state);
   if (timer_elapsed(mhenkan_state.pressed_time) > TAPPING_TERM &&
       mhenkan_state.is_pressed) {
-    register_os_specific_key(KC_LALT);
+    register_mods_for_key(&mhenkan_state);
   }
   handle_advanced_repeat(&mhenkan_state);
   handle_advanced_repeat(&c_spc_state);
@@ -339,7 +339,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       set_other_key_pressed();
       if (record->event.pressed && !is_modifier(keycode) &&
           !get_mods_active()) {
-        apply_active_mods(keycode);
+        apply_active_mods();
       }
   }
 

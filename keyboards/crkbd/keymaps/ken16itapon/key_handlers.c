@@ -54,7 +54,7 @@ void handle_key_press_init(uint16_t keycode) {
 bool handle_tap_key(key_state_t *state, uint16_t record_time) {
   // 離した時の単打判定
   if (timer_elapsed(state->pressed_time) < TAPPING_TERM) {
-    // 修飾キーがあれば解除
+    apply_active_mods();
     if (state->mod_count > 0) {
       unregister_mods_for_key(state);
     }
@@ -89,7 +89,7 @@ bool handle_modifier_key(bool pressed, uint16_t keycode) {
 }
 
 // キーに対して有効な修飾キーを適用する
-void apply_active_mods(uint16_t keycode) {
+void apply_active_mods(void) {
   // 修飾キーを持つすべてのキー状態をチェック
   if (henkan_state.is_pressed) {
     register_mods_for_key(&henkan_state);
@@ -165,6 +165,7 @@ bool handle_raise_key(keyrecord_t *record) {
   raise_state.is_pressed = false;
   layer_off(_RAISE);
   update_tri_layer(_LOWER, _RAISE, _ADJUST);
+
   bool result = handle_tap_key(&raise_state, record->event.time);
 
   return result;  // 明示的にreturnを追加
@@ -172,25 +173,18 @@ bool handle_raise_key(keyrecord_t *record) {
 
 bool handle_henkan_key(keyrecord_t *record) {
   if (record->event.pressed) {
-    // キー押下時の共通処理
-
-
     henkan_state.is_pressed = true;
     henkan_state.pressed_time = record->event.time;
-
-  //  register_mods_for_key(&henkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&henkan_state);
 
     return false;
   } else {
-
     // キー離し時の処理 - 簡略化された呼び出し
     henkan_state.is_pressed = false;
     unregister_mods_for_key(&henkan_state);
     bool result = handle_tap_key(&henkan_state, record->event.time);
-
 
     // タップ時の追加処理（薙刀式オン）
     if (henkan_state.code_sent) {
@@ -208,7 +202,7 @@ bool handle_mhenkan_key(keyrecord_t *record) {
     // mhenkan_state.mods_active = true;  // 削除
 
     // 修飾キー関数を使用
-  //  register_mods_for_key(&mhenkan_state);
+    //  register_mods_for_key(&mhenkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&mhenkan_state);
