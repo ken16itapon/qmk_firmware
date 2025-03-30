@@ -3,10 +3,41 @@
     "manufacturer": "yushakobo",
     "url": "",
     "maintainer": "yushakobo",
+    "processor": "RP2040",
+    "bootloader": "rp2040",
     "usb": {
         "vid": "0x3265",
         "pid": "0x0003",
         "device_version": "0.0.1"
+    },
+    "features": {
+        "bootmagic": true,
+        "nkro": true,
+        "mousekey": true,
+        "extrakey": true,
+        "rgb_matrix": true,
+        "rgblight": false,
+        "encoder": true,
+        "oled": false
+    },
+    "ws2812": {
+        "pin": "GP0",
+        "driver": "vendor"
+    },
+    "matrix_pins": {
+        "cols": ["GP29", "GP28", "GP27", "GP26", "GP22", "GP20", "GP23"],
+        "rows": ["GP4", "GP5", "GP6", "GP7", "GP8"]
+    },
+    "diode_direction": "COL2ROW",
+    "split": {
+        "enabled": true,
+        "serial": {
+            "driver": "vendor",
+            "pin": "GP1"
+        },
+        "transport": {
+            "protocol": "serial"
+        }
     },
     "rgb_matrix": {
         "driver": "ws2812",

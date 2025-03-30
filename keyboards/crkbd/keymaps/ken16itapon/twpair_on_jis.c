@@ -27,6 +27,7 @@
 
 #include QMK_KEYBOARD_H
 #include "keymap_japanese.h"
+#include "os_specific.h"
 
 const uint16_t us2jis[][2] = {
     {KC_LPRN, JP_LPRN}, {KC_RPRN, JP_RPRN}, {KC_AT, JP_AT},
@@ -65,7 +66,22 @@ bool twpair_on_jis(uint16_t keycode, keyrecord_t *record) {
       unregister_mods(MOD_BIT(KC_LSFT));
     } else {
       // バックスラッシュ
-      tap_code(JP_BSLS);
+      if (global_os_cache == OS_MACOS) {
+        // Save Option key state
+        bool opt_state = get_mods() & MOD_BIT(KC_LOPT);
+        // Turn on Option key
+        register_mods(MOD_BIT(KC_LOPT));
+        // Send the key
+        tap_code(KC_INT3);
+        // Turn off Option key
+        unregister_mods(MOD_BIT(KC_LOPT));
+        // Restore Option key state if it was on
+        if (opt_state) {
+            register_mods(MOD_BIT(KC_LOPT));
+        }
+      } else {
+        tap_code(JP_BSLS);
+      }
     }
 
     // シフト状態を復元

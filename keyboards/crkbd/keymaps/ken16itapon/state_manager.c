@@ -19,7 +19,7 @@ uint16_t all_keys_released_time = 0;
 void initialize_key_states(void) {
   // HENKANキー
   henkan_state.keycode = HENKAN;  // 変換キー（OS固有のキーコード）
-  henkan_state.mod_keys[0] = KC_RCTL;
+  henkan_state.mod_keys[0] = KC_RWIN;
   henkan_state.mod_count = 1;
 
   // MHENKANキー

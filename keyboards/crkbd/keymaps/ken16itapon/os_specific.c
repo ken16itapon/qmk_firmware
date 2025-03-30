@@ -8,7 +8,7 @@
 static keyboard_os_t current_os_mode = OS_AUTO;
 
 // グローバル変数の定義
-keyboard_os_t global_os_cache = OS_MACOS;  // デフォルトでmacOSに設定;
+keyboard_os_t global_os_cache = OS_MACOS;
 
 // OSの種類を取得する関数
 keyboard_os_t get_current_os(void) {
@@ -73,6 +73,11 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
       case MHENKAN:
         return MC_MHENKAN;  // 無変換キー
 
+      case SC_BACK:
+        return LCMD(KC_LBRC);
+      case SC_FWD:
+        return LCMD(KC_RBRC);
+
       default:
         return keycode;
     }
@@ -84,6 +89,11 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
         return WC_HENKAN;  // 変換キー
       case MHENKAN:
         return WC_MHENKAN;  // 無変換キー
+
+        case SC_BACK:
+        return LALT(KC_LEFT);
+      case SC_FWD:
+        return LALT(KC_RGHT);
 
       default:
         return keycode;

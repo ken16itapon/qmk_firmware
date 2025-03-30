@@ -25,7 +25,9 @@ enum custom_keycodes {
   C_SPC,
   C_BSPC,
 
-  CC_LCTL
+  CC_LCTL,
+  SC_BACK,
+  SC_FWD
   };
 
 // レイヤー定義

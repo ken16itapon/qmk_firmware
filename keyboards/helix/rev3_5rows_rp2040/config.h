@@ -21,22 +21,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MATRIX_ROWS 10
 #define MATRIX_COLS 7
 
-/* COL2ROW, ROW2COL*/
-#define DIODE_DIRECTION COL2ROW
+// // /* COL2ROW, ROW2COL*/
+// // #define DIODE_DIRECTION COL2ROW
 
-/* Matrix Pin Configuration for RP2040 */
-#define MATRIX_ROW_PINS \
-    { GP4, GP5, GP6, GP7, GP8 }
-#define MATRIX_COL_PINS \
-    { GP29, GP28, GP27, GP26, GP22, GP20, GP23 }
-#define DIODE_DIRECTION COL2ROW
+// /* Matrix Pin Configuration for RP2040 */
+// #define MATRIX_ROW_PINS \
+//     { GP4, GP5, GP6, GP7, GP8 }
+// #define MATRIX_COL_PINS \
+//     { GP29, GP28, GP27, GP26, GP22, GP20, GP23 }
+// #define DIODE_DIRECTION COL2ROW
 
 /* Split Configuration */
-// スプリット通信の基本設定
-#define SPLIT_USB_DETECT
-#define SERIAL_DRIVER VENDOR
-#define SERIAL_USART_TX_PIN GP1
-#define SERIAL_USART_RX_PIN GP1
+// // スプリット通信の基本設定
+// #define SPLIT_USB_DETECT
+// #define SERIAL_DRIVER VENDOR
+// #define SERIAL_USART_TX_PIN GP1
+// #define SERIAL_USART_RX_PIN GP1
 
 // スプリット機能の設定
 #define SPLIT_HAND_MATRIX_GRID GP6, GP23
