@@ -7,8 +7,8 @@
 enum custom_keycodes;
 
 // 変換/無変換キーの定義q
-#define MC_HENKAN KC_LNG1   // macOSでの変換キー
-#define MC_MHENKAN KC_LNG2  // macOSでの無変換キー
+#define MC_HENKAN KC_LNG1   // macOSでのカナキー
+#define MC_MHENKAN KC_LNG2  // macOSでの英数キー
 #define WC_HENKAN KC_INT4   // WindowsでのIME有効化
 #define WC_MHENKAN KC_INT5  // WindowsでのIME無効化
 

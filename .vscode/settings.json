@@ -50,5 +50,19 @@
             "args": ["--login"],
             "icon": "terminal-bash"
         }
-    }
+    },
+    
+    // macOS用ターミナル設定
+    "terminal.integrated.defaultProfile.osx": "QMK Terminal",
+    "terminal.integrated.profiles.osx": {
+        "QMK Terminal": {
+            "path": "/bin/zsh",
+            "args": [],
+            "env": {
+                "QMK_HOME": "/Volumes/ExternalSSD/Developnent /qmk_firmware"
+            },
+            "icon": "terminal"
+        }
+    },
+    "terminal.integrated.cwd": "/Volumes/ExternalSSD/Developnent /qmk_firmware"
 }

@@ -339,8 +339,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       return false;
 
     case SC_FWD:
-        tap_os_specific_key(SC_FWD);
-        return false;
+      tap_os_specific_key(SC_FWD);
+      return false;
 
     default:
       reset_code_sent();
@@ -351,7 +351,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
   }
 
-  if (!twpair_on_jis(keycode, record)) return false;
+  if (get_current_os() != OS_MACOS) {
+    if (!twpair_on_jis(keycode, record)) return false;
+  }
 
   if (!process_naginata(keycode, record)) return true;
 
