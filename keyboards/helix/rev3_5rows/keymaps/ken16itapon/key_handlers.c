@@ -2,7 +2,7 @@
 #include "keymap.h"      // カスタムキーコード、レイヤー定義
 // その他の依存関係
 #include "key_handlers.h"
-#include "naginata.h"
+// naginata.hはkeymap.hで条件付きインクルードされる
 
 // タップと長押しの両方をサポートしたリピート処理
 void handle_advanced_repeat(key_state_t *state) {
@@ -25,7 +25,7 @@ void handle_advanced_repeat(key_state_t *state) {
 
   state->code_sent = false;
   state->repeat_active = true;
-  register_os_specific_key(state->keycode);
+  register_code(state->keycode);
 }
 
 // キー押下時の初期化処理
@@ -60,13 +60,13 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
     }
 
     // タップキーを送信
-    tap_os_specific_key(state->keycode);
+    tap_code(state->keycode);
     state->code_sent = true;
     state->released_time = record_time;
   }
 
   if (state->repeat_active) {
-    unregister_os_specific_key(state->keycode);
+    unregister_code(state->keycode);
     state->repeat_active = false;
     state->code_sent = false;
   }
@@ -81,9 +81,9 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
 // 修飾キー処理
 bool handle_modifier_key(bool pressed, uint16_t keycode) {
   if (pressed) {
-    register_os_specific_key(keycode);
+    register_code(keycode);
   } else {
-    unregister_os_specific_key(keycode);
+    unregister_code(keycode);
   }
   return false;
 }
@@ -254,7 +254,7 @@ bool handle_c_spc_key(keyrecord_t *record) {
     // キー押下時の共通処理
     c_spc_state.is_pressed = true;
     c_spc_state.pressed_time = record->event.time;
-    register_os_specific_key(KC_RCTL);
+    register_code(KC_RCTL);
 
     // 重要: rapid_press判定（前回のタップからの継続かどうか）
     if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {
@@ -273,7 +273,7 @@ bool handle_c_spc_key(keyrecord_t *record) {
 
     // 状態リセット
     c_spc_state.is_pressed = false;
-    unregister_os_specific_key(KC_RCTL);
+    unregister_code(KC_RCTL);
 
     return result;
   }

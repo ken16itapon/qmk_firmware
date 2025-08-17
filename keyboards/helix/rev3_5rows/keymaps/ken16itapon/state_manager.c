@@ -17,14 +17,14 @@ uint16_t all_keys_released_time = 0;
 
 // キー状態の初期化
 void initialize_key_states(void) {
-  // HENKANキー
-  henkan_state.keycode = HENKAN;  // 変換キー（OS固有のキーコード）
+  // HENKANキー（KANAとして動作、macOS: かな切替）
+  henkan_state.keycode = KC_LNG1;  // macOS用のかなキー
   henkan_state.mod_keys[0] = KC_RSFT;
   henkan_state.mod_count = 1;
 
-  // MHENKANキー
-  mhenkan_state.keycode = MHENKAN;  // 無変換キー（OS固有のキーコード）
-  mhenkan_state.mod_keys[0] = KC_LWIN;
+  // MHENKANキー（EISUとして動作、macOS: 英数切替）
+  mhenkan_state.keycode = KC_LNG2;  // macOS用の英数キー
+  mhenkan_state.mod_keys[0] = KC_LALT;
   mhenkan_state.mod_count = 1;
 
   // C_BSPCキー
@@ -55,14 +55,14 @@ void initialize_key_states(void) {
 // キーに関連付けられた全ての修飾キーを登録
 void register_mods_for_key(key_state_t *key_state) {
   for (uint8_t i = 0; i < key_state->mod_count; i++) {
-    register_os_specific_key(key_state->mod_keys[i]);
+    register_code(key_state->mod_keys[i]);
   }
 }
 
 // キーに関連付けられた全ての修飾キーを解除
 void unregister_mods_for_key(key_state_t *key_state) {
   for (uint8_t i = 0; i < key_state->mod_count; i++) {
-    unregister_os_specific_key(key_state->mod_keys[i]);
+    unregister_code(key_state->mod_keys[i]);
   }
 }
 

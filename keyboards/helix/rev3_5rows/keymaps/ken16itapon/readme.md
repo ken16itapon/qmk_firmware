@@ -1,3 +1,62 @@
+# Helix rev3_5rows ken16itapon キーマップ
+
+薙刀式配列対応のHelixキーマップです。Mac/Windows両対応。
+
+## コンパイル方法
+
+### Mac用（デフォルト）
+```bash
+# QMKコマンドを使用
+qmk compile -kb helix/rev3_5rows -km ken16itapon
+
+# またはmakeコマンド
+make helix/rev3_5rows:ken16itapon
+```
+
+### Windows用
+```bash
+# makeコマンドでTARGET_OS=WINを指定
+make helix/rev3_5rows:ken16itapon TARGET_OS=WIN
+```
+
+## 書き込み方法
+
+### Mac用
+```bash
+qmk flash -kb helix/rev3_5rows -km ken16itapon
+```
+
+### Windows用
+```bash
+# 書き込み前にWindows用でコンパイル
+make helix/rev3_5rows:ken16itapon TARGET_OS=WIN
+
+# 書き込み
+make helix/rev3_5rows:ken16itapon:flash TARGET_OS=WIN
+```
+
+## 主な違い
+
+### Mac用ビルド（TARGET_OS=MAC）
+- デフォルトOS: macOS
+- 修飾キー: Ctrl→Cmd、Alt→Ctrl、Win→Option
+- IMEキー: 変換→カナ（KC_LNG1）、無変換→英数（KC_LNG2）
+- twpair_on_jis: 無効（USキーボード想定）
+
+### Windows用ビルド（TARGET_OS=WIN）
+- デフォルトOS: Windows
+- 修飾キー: 標準配置
+- IMEキー: 変換→KC_INT4、無変換→KC_INT5
+- twpair_on_jis: 有効（JISキーボード用のペア入力補正）
+
+## 機能
+
+- 薙刀式配列（KANAキーで有効化、EISUキーで無効化）
+- 左右自動判定（SPLIT_HAND_MATRIX_GRID使用）
+- OS固有のキーマッピング自動切り替え
+
+---
+
 # The default keymap for Helix rev3 5rows
 
 ### Qwerty Layer (Base)

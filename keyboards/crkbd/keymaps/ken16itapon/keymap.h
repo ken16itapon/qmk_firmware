@@ -33,7 +33,7 @@ enum custom_keycodes {
 // レイヤー定義
 enum layers { _BASE = 0, _NAGINATA, _LOWER, _RAISE, _ADJUST, _10KEY };
 
-#define S_ENTER SFT_T(KC_ENT)
+#define C_ENT CTL_T(KC_ENT)
 
 #define COPILOT LSG(KC_F23)
 #define POWER KC_KB_POWER
