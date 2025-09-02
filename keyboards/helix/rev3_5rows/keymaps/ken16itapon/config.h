@@ -16,9 +16,12 @@
 
 #pragma once
 
-// 左右判定の設定
-// EE_HANDS: EEPROMに左右情報を保存（ケーブルをどちらに挿しても正しく動作）
-#define EE_HANDS
-
 // タッピングタームの設定
 #define TAPPING_TERM 180
+
+#undef SPLIT_HAND_MATRIX_GRID
+#define EE_HANDS
+
+/* Custom font */
+#define OLED_FONT_H "keyboards/helix/common/glcdfont.c"
+

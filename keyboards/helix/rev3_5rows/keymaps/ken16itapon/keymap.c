@@ -29,11 +29,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     //|--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
          KC_TAB,    KC_Q,    KC_W,    KC_F,    KC_P,    KC_G,                      KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN,  KC_EQL,
     //|--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-        KC_LCTL,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
+        CC_BSPC,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D,                      KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
     //|--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-        KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B, KC_LBRC,TG(_PAD),    KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
+        KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,  OS_MEH,TG(_PAD),    KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
     //|--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-        _______, _______, KC_LALT, KC_LGUI,    EISU,   LOWER,   C_SPC,  KC_ENT,   RAISE,    KANA, KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT
+        _______, _______, KC_LALT, KC_LGUI,    EISU,   LOWER,   C_ENT,  S_BSPC,   RAISE,    KANA, KC_LEFT, KC_DOWN,   KC_UP, KC_RGHT
     //`-----------------------------------------------------------------------------------------------------------------------------'
     ),
 
@@ -81,15 +81,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_PAD] = LAYOUT(
     //,-----------------------------------------------------.                 ,-----------------------------------------------------.
-        _______, _______, _______, _______, _______, _______,                    KC_NUM, KC_LPRN, KC_RPRN, KC_PERC, KC_CIRC, KC_BSPC,
+         KC_NUM, KC_LPRN, KC_RPRN, KC_PERC, KC_CIRC, KC_BSPC,                    KC_NUM, KC_LPRN, KC_RPRN, KC_PERC, KC_CIRC, KC_BSPC,
     //|--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-        _______, _______, _______, _______, _______, _______,                   C(KC_C),   KC_P7,   KC_P8,   KC_P9,   KC_LT,   KC_GT,
+        C(KC_C),   KC_P7,   KC_P8,   KC_P9,   KC_LT,   KC_GT,                   C(KC_C),   KC_P7,   KC_P8,   KC_P9,   KC_LT,   KC_GT,
     //|--------+--------+--------+--------+--------+--------|                 |--------+--------+--------+--------+--------+--------|
-        _______, _______, _______, _______, _______, _______,                   C(KC_X),   KC_P4,   KC_P5,   KC_P6, KC_PAST, KC_PSLS,
+        C(KC_X),   KC_P4,   KC_P5,   KC_P6, KC_PAST, KC_PSLS,                   C(KC_X),   KC_P4,   KC_P5,   KC_P6, KC_PAST, KC_PSLS,
     //|--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-        _______, _______, _______, _______, _______, _______, _______, _______, C(KC_V),   KC_P1,   KC_P2,   KC_P3, KC_PPLS, KC_PMNS,
+        C(KC_V),   KC_P1,   KC_P2,   KC_P3, KC_PPLS, KC_PMNS, _______, _______, C(KC_V),   KC_P1,   KC_P2,   KC_P3, KC_PPLS, KC_PMNS,
     //|--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------|
-        _______, _______, _______, _______, _______, _______, _______, _______, _______,   KC_P0, KC_PCMM, KC_PDOT, KC_PEQL, KC_PENT
+        _______,   KC_P0, KC_PCMM, KC_PDOT, KC_PEQL, KC_PENT, _______, _______, _______,   KC_P0, KC_PCMM, KC_PDOT, KC_PEQL, KC_PENT
     //`-----------------------------------------------------------------------------------------------------------------------------'
     ),
 
@@ -136,7 +136,9 @@ void matrix_scan_user(void) {
     register_mods_for_key(&mhenkan_state);
   }
   handle_advanced_repeat(&mhenkan_state);
-  handle_advanced_repeat(&c_spc_state);
+  handle_advanced_repeat(&cc_bspc_state);
+  handle_advanced_repeat(&s_bspc_state);
+  handle_advanced_repeat(&c_ent_state);
   handle_advanced_repeat(&lower_state);
   handle_advanced_repeat(&raise_state);
 
@@ -158,7 +160,7 @@ void keyboard_post_init_user(void) {
   // 薙刀式の初期化など、他の初期化処理
   naginata_clear();
   naginata_off();
-  
+
   // RGB LEDの初期化
   #ifdef RGBLIGHT_ENABLE
     rgblight_enable();
@@ -183,7 +185,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
       set_other_key_pressed();
       break;
   }
-  
+
   // RGBライトでレイヤーを表示
   #ifdef RGBLIGHT_ENABLE
     switch (current_layer) {
@@ -212,7 +214,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
         break;
     }
   #endif
-  
+
   return update_tri_layer_state(state, _LOWER, _RAISE, _ADJUST);
 }
 
@@ -240,8 +242,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case KANA:  // HENKAN相当
       return handle_henkan_key(record);
 
-    case C_SPC:
-      return handle_c_spc_key(record);
+    case CC_BSPC:
+      return handle_cc_bspc_key(record);
+
+    case S_BSPC:
+      return handle_s_bspc_key(record);
+
+    case C_ENT:
+      return handle_c_ent_key(record);
 
     case ADJUST:
       if (record->event.pressed) {
@@ -276,13 +284,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       }
   }
 
-  // 薙刀式の処理
-  if (!process_naginata(keycode, record)) return false;
-  
   // Windows用JISキーボード処理
   #ifdef TARGET_OS_WINDOWS
     if (!twpair_on_jis(keycode, record)) return false;
   #endif
+
+  // 薙刀式の処理
+  if (!get_mods_active()) {
+    if (!process_naginata(keycode, record)) return true;
+  }
 
   return true;
 }

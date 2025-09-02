@@ -18,9 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H  // 最初に基本QMKヘッダー
 #include "keymap.h"      // カスタムキーコード、レイヤー定義
 
-#include "key_handlers.h"
-#include "os_specific.h"    // OS関連の関数を使うために追加
-#include "state_manager.h"  // is_modifier関数を使うために追加
 
 enum {
   TD_CSTAB = 0,
@@ -31,13 +28,13 @@ enum {
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3_ex2(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-       CS_TAB,    KC_Q,    KC_W,    KC_F,    KC_P,    KC_G, COPILOT,     TENKEY,    KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN, KC_MINS,
+       CS_TAB,    KC_Q,    KC_W,    KC_F,    KC_P,    KC_G,   HYSPC,     TENKEY,    KC_J,    KC_L,    KC_U,    KC_Y, KC_SCLN, KC_MINS,
   //|--------+--------+--------+--------+--------+--------+--------.  ,--------+--------+--------+--------+--------+--------+--------|
-       C_BSPC,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D, XXXXXXX,     KC_EQL,    KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
+      CC_BSPC,    KC_A,    KC_R,    KC_S,    KC_T,    KC_D,  OS_MEH,     OS_MEH,    KC_H,    KC_N,    KC_E,    KC_I,    KC_O, KC_QUOT,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
       KC_LSFT,    KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,                         KC_K,    KC_M, KC_COMM,  KC_DOT, KC_SLSH, KC_BSLS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          MHENKAN,   LOWER,   C_SPC,     KC_ENT,   RAISE,  HENKAN
+                                          MHENKAN,   LOWER,   C_ENT,     C_BSPC,   RAISE,  HENKAN
                                       //`--------------------------'  `--------------------------'
 
   ),
@@ -82,11 +79,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_ADJUST] = LAYOUT_split_3x6_3_ex2(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-      QK_BOOT,  EE_CLR, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,MAC_MODE,   WIN_MODE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  S_CAPS,
+      QK_BOOT,  EE_CLR, RM_TOGG, RM_HUEU, RM_SATU, RM_VALU,MAC_MODE,   WIN_MODE, KC_PSCR, KC_SCRL, KC_PAUS,  KC_INS,  KC_DEL,  S_CAPS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      RM_TOGG, RM_HUEU, RM_SATU, RM_VALU, XXXXXXX, XXXXXXX, OS_DISP,  AUTO_MODE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,
+      XXXXXXX, XXXXXXX, RM_NEXT, RM_HUED, RM_SATD, RM_VALD, OS_DISP,  AUTO_MODE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      RM_NEXT, RM_HUED, RM_SATD, RM_VALD, XXXXXXX, XXXXXXX,                      KC_PSCR, KC_SCRL, KC_PAUS,  KC_INS,  KC_DEL, XXXXXXX,
+      KC_BRID, KC_BRIU, KC_MCTL, KC_LPAD, XXXXXXX, XXXXXXX,                      KC_MRWD, KC_MPLY, KC_MFFD, KC_MUTE, KC_VOLD, KC_VOLU,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
                                           XXXXXXX, XXXXXXX, XXXXXXX,    XXXXXXX, XXXXXXX, XXXXXXX
                                       //`--------------------------'  `--------------------------'
@@ -94,13 +91,13 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
       [_10KEY] = LAYOUT_split_3x6_3_ex2(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
-       KC_TAB,   KC_P7,   KC_P8,   KC_P9,    KC_P, KC_BSPC, _______,    _______, KC_COMM,   KC_P7,   KC_P8,   KC_P9,    KC_P, KC_BSPC,
+       KC_TAB, _______,   KC_P8,   KC_P9,    KC_P, KC_COMM, _______,    _______, KC_COMM,   KC_P7,   KC_P8,   KC_P9, _______, KC_BSPC,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      KC_LCTL, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PMNS, _______,    _______, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PMNS, KC_PSLS,
+      KC_PSLS, KC_PAST,   KC_P4,   KC_P5,   KC_P6, KC_PDOT, _______,    _______, KC_PDOT,   KC_P4,   KC_P5,   KC_P6, KC_PAST, KC_PSLS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-      KC_LSFT,   KC_P0,   KC_P1,   KC_P2,   KC_P3, KC_PPLS,                        KC_P0,   KC_P1,   KC_P2,   KC_P3, KC_PPLS, KC_PAST,
+      KC_PMNS, KC_PPLS,   KC_P1,   KC_P2,   KC_P3,   KC_P0,                        KC_P0,   KC_P1,   KC_P2,   KC_P3, KC_PPLS, KC_PMNS,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
-                                          KC_LWIN,   MO(1),  KC_SPC,     KC_ENT,   MO(2), KC_RALT
+                                          KC_LWIN,   MO(1),  KC_ENT,     KC_ENT,   MO(2), KC_RALT
                                       //`--------------------------'  `--------------------------'
 
   )
@@ -146,6 +143,11 @@ void matrix_scan_user(void) {
   handle_advanced_repeat(&mhenkan_state);
   handle_advanced_repeat(&c_spc_state);
   handle_advanced_repeat(&c_bspc_state);
+  if (timer_elapsed(c_ent_state.pressed_time) > TAPPING_TERM &&
+      c_ent_state.is_pressed) {
+    register_mods_for_key(&c_ent_state);
+  }
+  handle_advanced_repeat(&c_ent_state);
   handle_advanced_repeat(&lower_state);
   handle_advanced_repeat(&raise_state);
 
@@ -334,13 +336,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case C_BSPC:
       return handle_c_bspc_key(record);
 
-    case SC_BACK:
-      tap_os_specific_key(SC_BACK);
-      return false;
+    case CC_BSPC:
+      return handle_cc_bspc_key(record);
 
-    case SC_FWD:
-      tap_os_specific_key(SC_FWD);
-      return false;
+    case C_ENT:
+      return handle_c_ent_key(record);
 
     default:
       reset_code_sent();

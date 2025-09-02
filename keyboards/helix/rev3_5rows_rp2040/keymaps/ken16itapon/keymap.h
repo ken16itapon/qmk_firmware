@@ -3,6 +3,7 @@
 #include QMK_KEYBOARD_H
 
 #include "key_handlers.h"
+#include "keymap_japanese.h"
 #include "state_manager.h"
 // 条件付きインクルード
 #ifdef NAGINATA_ENABLE
@@ -50,9 +51,6 @@
 
 // twpair_on_jisの定義（Windows用）
 #ifdef TARGET_OS_WINDOWS
-  #include "keymap_japanese.h"
-  #include "twpair_on_jis.h"  // Windows用のJISキー処理を含む
-  // twpair_on_jisの実装をヘッダーで定義
   bool twpair_on_jis(uint16_t keycode, keyrecord_t *record);
 #else
   #define twpair_on_jis(keycode, record) true
@@ -64,10 +62,8 @@ enum custom_keycodes {
   KANA,                   // HENKAN相当（かな）
   LOWER,
   RAISE,
-  S_BSPC,                  // SHIFT+Space
-  C_BSPC,                 // Ctrl/CMD+Backspace
-  CC_BSPC,                 // Ctrl+Backspace
-  C_ENT,                 // Ctrl+Enter
+  C_SPC,                  // Ctrl+Space（IME切り替え用）
+  C_BSPC,                 // Ctrl+Backspace
   ADJUST,
   RGBRST                  // RGB設定リセット
 };
@@ -76,10 +72,9 @@ enum custom_keycodes {
 #define MHENKAN EISU
 #define HENKAN KANA
 #define CC_LCTL KC_LCTL
-#define OS_MEH OSM(MOD_MEH)
 
 // レイヤー定義（既存のものを維持）
-enum layers {
+enum layers { 
   _COLEMAK = 0,
   _NAGINATA,
   _LOWER,

@@ -8,7 +8,11 @@
 static keyboard_os_t current_os_mode = OS_AUTO;
 
 // グローバル変数の定義
+#ifdef TARGET_OS_WINDOWS
+keyboard_os_t global_os_cache = OS_WINDOWS;
+#else
 keyboard_os_t global_os_cache = OS_MACOS;
+#endif
 
 // OSの種類を取得する関数
 keyboard_os_t get_current_os(void) {
@@ -26,11 +30,19 @@ keyboard_os_t get_current_os(void) {
       case OS_LINUX:
         return OS_LINUX;
       default:
+#ifdef TARGET_OS_WINDOWS
+        return OS_WINDOWS;  // デフォルトはWindows
+#else
         return OS_MACOS;  // デフォルトはMacOS
+#endif
     }
 #else
     // 検出機能が無効なら、デフォルトを返す
+#ifdef TARGET_OS_WINDOWS
+    return OS_WINDOWS;
+#else
     return OS_MACOS;
+#endif
 #endif
   }
 
@@ -73,6 +85,7 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
       case MHENKAN:
         return MC_MHENKAN;  // 無変換キー
 
+
       default:
         return keycode;
     }
@@ -84,6 +97,7 @@ uint16_t get_os_specific_keycode(uint16_t keycode) {
         return WC_HENKAN;  // 変換キー
       case MHENKAN:
         return WC_MHENKAN;  // 無変換キー
+
 
       default:
         return keycode;
@@ -153,34 +167,6 @@ void unregister_os_specific_mods(uint16_t keycode) {
   unregister_mods(mod_bit);
 }
 
-// OS設定モード切り替え処理
-bool handle_os_mode(uint16_t keycode, bool pressed) {
-  // keymap.hで定義されたカスタムキーコードを使用
-  if (!pressed) return false;
-
-  GET_OS();
-
-  switch (keycode) {
-    case AUTO_MODE:
-      global_os_cache = OS_AUTO;
-      break;
-    case MAC_MODE:
-      global_os_cache = OS_MACOS;
-      break;
-    case WIN_MODE:
-      global_os_cache = OS_WINDOWS;
-      break;
-    case LINUX_MODE:
-      global_os_cache = OS_LINUX;
-      break;
-    default:
-      return true;
-  }
-
-  // 設定を保存
-  eeconfig_update_os_mode(global_os_cache);
-  return false;
-}
 
 // EEPROMに設定を保存する関数
 void eeconfig_update_os_mode(keyboard_os_t mode) {
@@ -203,7 +189,11 @@ keyboard_os_t eeconfig_read_os_mode(void) {
   // 有効範囲チェック - 明示的な値をチェック
   if (os_mode != OS_AUTO && os_mode != OS_WINDOWS && os_mode != OS_MACOS &&
       os_mode != OS_LINUX) {
+#ifdef TARGET_OS_WINDOWS
+    os_mode = OS_WINDOWS;  // デフォルトはWindows
+#else
     os_mode = OS_MACOS;  // デフォルトはMacOS
+#endif
   }
 
   return (keyboard_os_t)os_mode;
@@ -298,7 +288,7 @@ bool handle_os_display(void) {
       break;
   }
 
-  SEND_STRING(os_name);
+  send_string(os_name);
 
   // ここでLEDフラッシュなどの視覚的フィードバックを追加
   // OS_MACOSなら2回点滅、OS_WINDOWSなら3回点滅など
@@ -306,11 +296,15 @@ bool handle_os_display(void) {
 
   for (uint8_t i = 0; i < blink_count; i++) {
     // LED点灯（白色など目立つ色）
-    rgb_matrix_sethsv(HSV_WHITE);
+    #ifdef RGBLIGHT_ENABLE
+    rgblight_sethsv_noeeprom(0, 0, 255);  // 白色
+    #endif
     wait_ms(100);
 
     // LED消灯
-    rgb_matrix_sethsv(HSV_BLACK);
+    #ifdef RGBLIGHT_ENABLE
+    rgblight_sethsv_noeeprom(0, 0, 0);  // 黒（消灯）
+    #endif
     wait_ms(100);
   }
 

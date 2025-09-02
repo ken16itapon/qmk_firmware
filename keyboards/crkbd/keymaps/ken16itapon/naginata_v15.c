@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "state_manager.h"
 #include QMK_KEYBOARD_H
 #include <string.h>
 
@@ -467,7 +468,9 @@ void ng_send_unicode_string_P(const char *pstr) {
 static int n_modifier = 0;
 
 bool process_modifier(uint16_t keycode, keyrecord_t *record) {
-  if (IS_MODIFIER_KEYCODE(keycode) || IS_QK_MOD_TAP(keycode)) {
+  if (IS_MODIFIER_KEYCODE(keycode) ||
+      IS_QK_MOD_TAP(keycode) ||
+      get_mods_active()) {
     if (record->event.pressed) {
       n_modifier++;
       layer_off(naginata_layer);

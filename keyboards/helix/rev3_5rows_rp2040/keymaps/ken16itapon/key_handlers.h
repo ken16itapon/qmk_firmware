@@ -7,9 +7,7 @@
 extern key_state_t lower_state;
 extern key_state_t raise_state;
 extern key_state_t c_bspc_state;
-extern key_state_t cc_bspc_state;
 extern key_state_t c_spc_state;
-extern key_state_t c_ent_state;
 extern key_state_t cs_tab_state;
 extern key_state_t henkan_state;
 extern key_state_t mhenkan_state;
@@ -27,8 +25,6 @@ bool handle_lower_key(keyrecord_t *record);
 bool handle_raise_key(keyrecord_t *record);
 bool handle_c_spc_key(keyrecord_t *record);
 bool handle_c_bspc_key(keyrecord_t *record);
-bool handle_cc_bspc_key(keyrecord_t *record);
-bool handle_c_ent_key(keyrecord_t *record);
 bool handle_henkan_key(keyrecord_t *record);
 bool handle_mhenkan_key(keyrecord_t *record);
 

@@ -1,9 +1,10 @@
-DEFAULT_FOLDER = helix/rev3_5rows
+EXTRAKEY_ENABLE = yes    # Audio control and System control
+RGBLIGHT_ENABLE = yes   # Enable keyboard RGB underglow
+RGB_MATRIX_ENABLE = no
+OLED_ENABLE = yes
+ENCODER_ENABLE = yes
+DIP_SWITCH_ENABLE = no
+MOUSEKEY_ENABLE = yes
+LTO_ENABLE = yes
 
-# quantum/rules.mk で参照
-MCU = RP2040
-BOOTLOADER = rp2040
-
-# quantum/split_common/rules.mk で使用
-SPLIT_KEYBOARD = yes
-SERIAL_DRIVER = vendor
+SRC += oled_display.c

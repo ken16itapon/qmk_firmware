@@ -2,7 +2,7 @@
 #include "keymap.h"      // カスタムキーコード、レイヤー定義
 // その他の依存関係
 #include "key_handlers.h"
-#include "naginata.h"
+// naginata.hはkeymap.hで条件付きインクルードされる
 
 // タップと長押しの両方をサポートしたリピート処理
 void handle_advanced_repeat(key_state_t *state) {
@@ -42,13 +42,6 @@ void handle_key_press_init(uint16_t keycode) {
   if (keycode != C_BSPC && c_bspc_state.is_pressed) {
     c_bspc_state.other_key_pressed = true;
   }
-  if (keycode != CC_BSPC && c_bspc_state.is_pressed) {
-    cc_bspc_state.other_key_pressed = true;
-  }
-  if (keycode != C_ENT && c_ent_state.is_pressed) {
-    c_ent_state.other_key_pressed = true;
-  }
-
   if (keycode != LOWER && lower_state.is_pressed) {
     lower_state.other_key_pressed = true;
   }
@@ -67,13 +60,13 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
     }
 
     // タップキーを送信
-    tap_os_specific_key(state->keycode);
+    tap_code(state->keycode);
     state->code_sent = true;
     state->released_time = record_time;
   }
 
   if (state->repeat_active) {
-    unregister_os_specific_key(state->keycode);
+    unregister_code(state->keycode);
     state->repeat_active = false;
     state->code_sent = false;
   }
@@ -88,9 +81,9 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
 // 修飾キー処理
 bool handle_modifier_key(bool pressed, uint16_t keycode) {
   if (pressed) {
-    register_os_specific_key(keycode);
+    register_code(keycode);
   } else {
-    unregister_os_specific_key(keycode);
+    unregister_code(keycode);
   }
   return false;
 }
@@ -104,17 +97,11 @@ void apply_active_mods(void) {
   if (mhenkan_state.is_pressed) {
     register_mods_for_key(&mhenkan_state);
   }
-  if(c_bspc_state.is_pressed) {
+  if (c_bspc_state.is_pressed) {
     register_mods_for_key(&c_bspc_state);
-  }
-  if(cc_bspc_state.is_pressed) {
-    register_mods_for_key(&cc_bspc_state);
   }
   if (c_spc_state.is_pressed) {
     register_mods_for_key(&c_spc_state);
-  }
-   if (c_ent_state.is_pressed) {
-    register_mods_for_key(&c_ent_state);
   }
   if (cs_tab_state.is_pressed) {
     register_mods_for_key(&cs_tab_state);
@@ -261,35 +248,13 @@ bool handle_c_bspc_key(keyrecord_t *record) {
   }
 }
 
-bool handle_cc_bspc_key(keyrecord_t *record) {
-  if (record->event.pressed) {
-    cc_bspc_state.is_pressed = true;
-    cc_bspc_state.pressed_time = record->event.time;
-
-    register_mods_for_key(&cc_bspc_state);
-
-    if (timer_elapsed(cc_bspc_state.released_time) < TAPPING_TERM) {
-      cc_bspc_state.rapid_press = true;
-    } else {
-      cc_bspc_state.rapid_press = false;
-    }
-
-    other_key_pressed_except(&cc_bspc_state);
-
-    return false;
-  } else {
-    return handle_tap_key(&cc_bspc_state, record->event.time);
-  }
-}
-
 // C_SPCキーを例にした処理
 bool handle_c_spc_key(keyrecord_t *record) {
   if (record->event.pressed) {
     // キー押下時の共通処理
     c_spc_state.is_pressed = true;
     c_spc_state.pressed_time = record->event.time;
-
-    register_mods_for_key(&c_spc_state);
+    register_code(KC_RCTL);
 
     // 重要: rapid_press判定（前回のタップからの継続かどうか）
     if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {
@@ -303,31 +268,13 @@ bool handle_c_spc_key(keyrecord_t *record) {
 
     return false;
   } else {
-    return handle_tap_key(&c_spc_state, record->event.time);
-  }
-}
+    // キー離し時の処理
+    bool result = handle_tap_key(&c_spc_state, record->event.time);
 
-// C_ENTキー
-bool handle_c_ent_key(keyrecord_t *record) {
-  if (record->event.pressed) {
-    // キー押下時の共通処理
-    c_ent_state.is_pressed = true;
-    c_ent_state.pressed_time = record->event.time;
+    // 状態リセット
+    c_spc_state.is_pressed = false;
+    unregister_code(KC_RCTL);
 
-    register_mods_for_key(&c_ent_state);
-
-    // 重要: rapid_press判定（前回のタップからの継続かどうか）
-    if (timer_elapsed(c_ent_state.released_time) < TAPPING_TERM) {
-      c_ent_state.rapid_press = true;
-    } else {
-      c_ent_state.rapid_press = false;
-    }
-
-    // 他のキーが押されていることを記録
-    other_key_pressed_except(&c_ent_state);
-
-    return false;
-  } else {
-    return handle_tap_key(&c_ent_state, record->event.time);
+    return result;
   }
 }

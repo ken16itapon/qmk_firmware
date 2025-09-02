@@ -1,3 +1,4 @@
+#include "state_manager.h"
 #include QMK_KEYBOARD_H  // 最初に基本QMKヘッダー
 #include "keymap.h"      // カスタムキーコード、レイヤー定義
 // その他の依存関係
@@ -25,7 +26,7 @@ void handle_advanced_repeat(key_state_t *state) {
 
   state->code_sent = false;
   state->repeat_active = true;
-  register_code(state->keycode);
+  register_os_specific_key(state->keycode);
 }
 
 // キー押下時の初期化処理
@@ -36,11 +37,14 @@ void handle_key_press_init(uint16_t keycode) {
   if (keycode != MHENKAN && mhenkan_state.is_pressed) {
     mhenkan_state.other_key_pressed = true;
   }
-  if (keycode != C_SPC && c_spc_state.is_pressed) {
-    c_spc_state.other_key_pressed = true;
+  if (keycode != S_BSPC && s_bspc_state.is_pressed) {
+    s_bspc_state.other_key_pressed = true;
   }
-  if (keycode != C_BSPC && c_bspc_state.is_pressed) {
-    c_bspc_state.other_key_pressed = true;
+  if (keycode != CC_BSPC && cc_bspc_state.is_pressed) {
+    cc_bspc_state.other_key_pressed = true;
+  }
+  if (keycode != C_ENT && c_ent_state.is_pressed) {
+    c_ent_state.other_key_pressed = true;
   }
   if (keycode != LOWER && lower_state.is_pressed) {
     lower_state.other_key_pressed = true;
@@ -97,11 +101,14 @@ void apply_active_mods(void) {
   if (mhenkan_state.is_pressed) {
     register_mods_for_key(&mhenkan_state);
   }
-  if (c_bspc_state.is_pressed) {
-    register_mods_for_key(&c_bspc_state);
+  if (cc_bspc_state.is_pressed) {
+    register_mods_for_key(&cc_bspc_state);
   }
-  if (c_spc_state.is_pressed) {
-    register_mods_for_key(&c_spc_state);
+  if (s_bspc_state.is_pressed) {
+    register_mods_for_key(&s_bspc_state);
+  }
+  if (c_ent_state.is_pressed) {
+    register_mods_for_key(&c_ent_state);
   }
   if (cs_tab_state.is_pressed) {
     register_mods_for_key(&cs_tab_state);
@@ -227,53 +234,84 @@ bool handle_mhenkan_key(keyrecord_t *record) {
   }
 }
 
-bool handle_c_bspc_key(keyrecord_t *record) {
+bool handle_cc_bspc_key(keyrecord_t *record) {
   if (record->event.pressed) {
-    c_bspc_state.is_pressed = true;
-    c_bspc_state.pressed_time = record->event.time;
+    cc_bspc_state.is_pressed = true;
+    cc_bspc_state.pressed_time = record->event.time;
 
-    register_mods_for_key(&c_bspc_state);
+    register_mods_for_key(&cc_bspc_state);
 
-    if (timer_elapsed(c_bspc_state.released_time) < TAPPING_TERM) {
-      c_bspc_state.rapid_press = true;
+    if (timer_elapsed(cc_bspc_state.released_time) < TAPPING_TERM) {
+      cc_bspc_state.rapid_press = true;
     } else {
-      c_bspc_state.rapid_press = false;
+      cc_bspc_state.rapid_press = false;
     }
 
-    other_key_pressed_except(&c_bspc_state);
+    other_key_pressed_except(&cc_bspc_state);
 
     return false;
   } else {
-    return handle_tap_key(&c_bspc_state, record->event.time);
+    return handle_tap_key(&cc_bspc_state, record->event.time);
   }
 }
 
-// C_SPCキーを例にした処理
-bool handle_c_spc_key(keyrecord_t *record) {
+// S_BSPCキーを例にした処理
+bool handle_s_bspc_key(keyrecord_t *record) {
   if (record->event.pressed) {
     // キー押下時の共通処理
-    c_spc_state.is_pressed = true;
-    c_spc_state.pressed_time = record->event.time;
-    register_code(KC_RCTL);
+    s_bspc_state.is_pressed = true;
+    s_bspc_state.pressed_time = record->event.time;
+    register_mods_for_key(&s_bspc_state);
 
     // 重要: rapid_press判定（前回のタップからの継続かどうか）
-    if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {
-      c_spc_state.rapid_press = true;
+    if (timer_elapsed(s_bspc_state.released_time) < TAPPING_TERM) {
+      s_bspc_state.rapid_press = true;
     } else {
-      c_spc_state.rapid_press = false;
+      s_bspc_state.rapid_press = false;
     }
 
     // 他のキーが押されていることを記録
-    other_key_pressed_except(&c_spc_state);
+    other_key_pressed_except(&s_bspc_state);
 
     return false;
   } else {
     // キー離し時の処理
-    bool result = handle_tap_key(&c_spc_state, record->event.time);
+    bool result = handle_tap_key(&s_bspc_state, record->event.time);
 
     // 状態リセット
-    c_spc_state.is_pressed = false;
-    unregister_code(KC_RCTL);
+    s_bspc_state.is_pressed = false;
+    unregister_mods_for_key(&s_bspc_state);
+
+    return result;
+  }
+}
+
+// C_ENTキーを例にした処理
+bool handle_c_ent_key(keyrecord_t *record) {
+  if (record->event.pressed) {
+    // キー押下時の共通処理
+    c_ent_state.is_pressed = true;
+    c_ent_state.pressed_time = record->event.time;
+    register_mods_for_key(&c_ent_state);
+
+    // 重要: rapid_press判定（前回のタップからの継続かどうか）
+    if (timer_elapsed(c_ent_state.released_time) < TAPPING_TERM) {
+      c_ent_state.rapid_press = true;
+    } else {
+      c_ent_state.rapid_press = false;
+    }
+
+    // 他のキーが押されていることを記録
+    other_key_pressed_except(&c_ent_state);
+
+    return false;
+  } else {
+    // キー離し時の処理
+    bool result = handle_tap_key(&c_ent_state, record->event.time);
+
+    // 状態リセット
+    c_ent_state.is_pressed = false;
+    unregister_mods_for_key(&c_ent_state);
 
     return result;
   }

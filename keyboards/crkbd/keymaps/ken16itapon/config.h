@@ -58,3 +58,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // タップダンス設定
 #define TAP_CODE_DELAY 10  // タップ間の遅延
+
+// One Shot Key
+#define ONESHOT_TIMEOUT 3000  // 5秒でタイムアウト

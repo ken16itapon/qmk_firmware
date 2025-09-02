@@ -1,47 +1,33 @@
-<<<<<<< HEAD
-# MCU設定
-MCU = RP2040
-BOOTLOADER = rp2040
 
-# スプリット設定
-SPLIT_KEYBOARD = yes
-SERIAL_DRIVER = vendor
-SPLIT_TRANSPORT_SYNC = yes
+# MCU and Bootloader config
+# RP2040 configuration (removed, using keyboard.json instead)
 
-# デバッグ機能
-CONSOLE_ENABLE = yes
-DEBUG_ENABLE = yes
+# Build Options
+ENCODER_MAP_ENABLE = no     # Disable encoder map to save space
+MOUSEKEY_ENABLE = no        # Mouse keys (disabled to save space)
+EXTRAKEY_ENABLE = yes       # Audio control and System control
+UNICODE_ENABLE = yes        # Unicode support (required for Naginata)
+LTO_ENABLE = yes            # Link Time Optimization to reduce size
+SPACE_CADET_ENABLE = no     # Disable Space Cadet to save space
+GRAVE_ESC_ENABLE = no       # Disable Grave Escape to save space
+MAGIC_ENABLE = no           # Disable Magic keycodes to save space
+OLED_ENABLE = no            # Disable OLED to save space
+RGBLIGHT_ENABLE = yes       # Enable RGB lighting for mode indication
 
-# RGB機能
-RGBLIGHT_ENABLE = yes
+# 薙刀式配列用の定義
+NAGINATA_ENABLE = yes
+OPT_DEFS += -DNAGINATA_ENABLE
 
-# 無効化する機能
-EXTRAKEY_ENABLE = no
-ENCODER_ENABLE = no
-MOUSEKEY_ENABLE = no
+# OS選択（デフォルトはMac）
+# Windows用にコンパイルする場合: make helix/rev3_5rows:ken16itapon TARGET_OS=WIN
+TARGET_OS ?= MAC
 
-# 最適化
-EXTRAFLAGS += -flto
-
-# ソースファイル
-SRC += naginata_v15.c
-SRC += twpair_on_jis.c
-SRC += split_debug.c
-
-# デバッグフラグ
-OPT_DEFS += -DCONSOLE_ENABLE
-OPT_DEFS += -DDEBUG_KEYBOARD
-OPT_DEFS += -DDEBUG_MATRIX_SCAN_RATE
-OPT_DEFS += -DDEBUG_SPLIT
-OPT_DEFS += -DDEBUG_TRANSPORT
-
-# スプリットデバッグ設定の強化
-OPT_DEFS += -DSPLIT_WATCHDOG_ENABLE
-OPT_DEFS += -DSPLIT_WATCHDOG_TIMEOUT=3000
-OPT_DEFS += -DSPLIT_USB_TIMEOUT=1000
-OPT_DEFS += -DSPLIT_USB_TIMEOUT_POLL=10
-OPT_DEFS += -DSPLIT_TRANSACTION_IDS_KB=20
-
-=======
-ENCODER_MAP_ENABLE = yes
->>>>>>> parent of 22e80d87bd (リポジトリ整理)
+ifeq ($(TARGET_OS),WIN)
+    OPT_DEFS += -DTARGET_OS_WINDOWS
+    # Windows用にtwpair_on_jisを有効化
+    SRC += key_handlers.c state_manager.c naginata_v15.c os_specific.c twpair_on_jis.c
+else
+    OPT_DEFS += -DTARGET_OS_MACOS
+    # Mac用（twpair_on_jisは不要）
+    SRC += key_handlers.c state_manager.c naginata_v15.c os_specific.c
+endif
