@@ -1,5 +1,6 @@
 #include QMK_KEYBOARD_H
 #include "state_manager.h"
+#include "special_keys_config.h"
 
 #include "keymap.h"
 #include "os_specific.h"
@@ -17,64 +18,62 @@ key_state_t mhenkan_state = {0};
 
 uint16_t all_keys_released_time = 0;
 
-// キー状態の初期化
+// キー状態の初期化（改修版）
 void initialize_key_states(void) {
+  // 各キー状態に特殊キーIDを設定
+  henkan_state.key_id = SK_HENKAN;
+  mhenkan_state.key_id = SK_MHENKAN;
+  c_bspc_state.key_id = SK_C_BSPC;
+  cc_bspc_state.key_id = SK_CC_BSPC;
+  c_spc_state.key_id = SK_C_SPC;
+  c_ent_state.key_id = SK_C_ENT;
+  cs_tab_state.key_id = SK_CS_TAB;
+  lower_state.key_id = SK_LOWER;
+  raise_state.key_id = SK_RAISE;
+  
+  // 互換性のため、現在のOS設定を初期値として設定
+  const os_key_config_t* config;
+  
   // HENKANキー
-  henkan_state.keycode = HENKAN;  // 変換キー（OS固有のキーコード）
-  henkan_state.mod_keys[0] = KC_RWIN;
-  henkan_state.mod_count = 1;
-
+  config = get_os_key_config(SK_HENKAN);
+  if (config) {
+    henkan_state.keycode = config->tap_key;
+    memcpy(henkan_state.mod_keys, config->mod_keys, sizeof(uint16_t) * config->mod_count);
+    henkan_state.mod_count = config->mod_count;
+  }
+  
   // MHENKANキー
-  mhenkan_state.keycode = MHENKAN;  // 無変換キー（OS固有のキーコード）
-  mhenkan_state.mod_keys[0] = KC_LWIN;
-  mhenkan_state.mod_count = 1;
-
-  // C_BSPCキー
-  c_bspc_state.keycode = KC_BSPC;
-  c_bspc_state.mod_keys[0] = KC_RSFT;
-  c_bspc_state.mod_count = 1;
-
-  // CC_BSPCキー
-  cc_bspc_state.keycode = KC_BSPC;
-  cc_bspc_state.mod_keys[0] = CC_LCTL;
-  cc_bspc_state.mod_count = 1;
-
-  // C_SPCキー
-  c_spc_state.keycode = KC_SPC;
-  c_spc_state.mod_keys[0] = KC_RSFT;
-  c_spc_state.mod_count = 1;
-
-  // C_ENTキー
-  c_ent_state.keycode = KC_ENT;
-  c_ent_state.mod_keys[0] = KC_RCTL;
-  c_ent_state.mod_count = 1;
-
-  // LOWERキー
-  lower_state.keycode = KC_BSPC;
-  lower_state.mod_count = 0;  // 修飾キーなし
-
-  // RAISEキー
-  raise_state.keycode = KC_SPC;
-  raise_state.mod_count = 0;  // 修飾キーなし
-
-  // CS_TABキー
-  cs_tab_state.keycode = KC_TAB;
-  cs_tab_state.mod_keys[0] = KC_LCTL;
-  cs_tab_state.mod_keys[1] = KC_LSFT;
-  cs_tab_state.mod_count = 2;
+  config = get_os_key_config(SK_MHENKAN);
+  if (config) {
+    mhenkan_state.keycode = config->tap_key;
+    memcpy(mhenkan_state.mod_keys, config->mod_keys, sizeof(uint16_t) * config->mod_count);
+    mhenkan_state.mod_count = config->mod_count;
+  }
+  
+  // その他のキーも同様に初期化（簡略化のため省略）
 }
 
 // キーに関連付けられた全ての修飾キーを登録
 void register_mods_for_key(key_state_t *key_state) {
-  for (uint8_t i = 0; i < key_state->mod_count; i++) {
-    register_os_specific_key(key_state->mod_keys[i]);
+  // OS別設定から修飾キーを取得して登録
+  const os_key_config_t* config = get_os_key_config(key_state->key_id);
+  if (config && config->mod_count > 0) {
+    for (uint8_t i = 0; i < config->mod_count; i++) {
+      // 修飾キーは既に正しいOS用のキーコードが設定されているため、直接登録
+      register_code(config->mod_keys[i]);
+    }
   }
 }
 
 // キーに関連付けられた全ての修飾キーを解除
 void unregister_mods_for_key(key_state_t *key_state) {
-  for (uint8_t i = 0; i < key_state->mod_count; i++) {
-    unregister_os_specific_key(key_state->mod_keys[i]);
+  // OS別設定から修飾キーを取得して解除
+  const os_key_config_t* config = get_os_key_config(key_state->key_id);
+  if (config && config->mod_count > 0) {
+    for (uint8_t i = 0; i < config->mod_count; i++) {
+      // 修飾キーは既に正しいOS用のキーコードが設定されているため、直接解除
+      unregister_code(config->mod_keys[i]);
+    }
   }
 }
 

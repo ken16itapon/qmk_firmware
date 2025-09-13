@@ -298,7 +298,7 @@ bool handle_os_display(void) {
       break;
   }
 
-  SEND_STRING(os_name);
+  send_string(os_name);
 
   // ここでLEDフラッシュなどの視覚的フィードバックを追加
   // OS_MACOSなら2回点滅、OS_WINDOWSなら3回点滅など

@@ -1,6 +1,7 @@
 #pragma once
 
 #include QMK_KEYBOARD_H
+#include "special_keys_config.h"
 
 // 最大修飾キー数
 #define MAX_MOD_KEYS 4
@@ -15,10 +16,11 @@ typedef struct key_state {
   bool repeat_active;
   bool other_key_pressed;  // 他のキーが押されたフラグ
 
-  // キー関連情報
-  uint16_t keycode;                 // このキーのキーコード
-  uint16_t mod_keys[MAX_MOD_KEYS];  // このキーに対応する修飾キー（配列）
-  uint8_t mod_count;                // 実際に使用する修飾キーの数
+  // キー関連情報（改修版）
+  special_key_id_t key_id;           // 特殊キー識別子
+  uint16_t keycode;                  // 互換性のため残す（タップキー用）
+  uint16_t mod_keys[MAX_MOD_KEYS];   // 互換性のため残す（修飾キー用）
+  uint8_t mod_count;                 // 互換性のため残す
 } key_state_t;
 
 // 変数宣言

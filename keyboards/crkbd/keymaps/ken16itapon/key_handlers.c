@@ -3,6 +3,7 @@
 // その他の依存関係
 #include "key_handlers.h"
 #include "naginata.h"
+#include "special_keys_config.h"
 
 // タップと長押しの両方をサポートしたリピート処理
 void handle_advanced_repeat(key_state_t *state) {
@@ -19,13 +20,16 @@ void handle_advanced_repeat(key_state_t *state) {
   }
 
   // リピート開始条件を満たした - 修飾キーを解除してから通常キーを登録
-  if (state->mod_count > 0) {
-    unregister_mods_for_key(state);
-  }
+  unregister_mods_for_key(state);
 
   state->code_sent = false;
   state->repeat_active = true;
-  register_os_specific_key(state->keycode);
+
+  // OS別設定からタップキーを取得して登録
+  const os_key_config_t* config = get_os_key_config(state->key_id);
+  if (config) {
+    register_os_specific_key(config->tap_key);
+  }
 }
 
 // キー押下時の初期化処理
@@ -62,18 +66,23 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
   // 離した時の単打判定
   if (timer_elapsed(state->pressed_time) < TAPPING_TERM) {
     apply_active_mods();
-    if (state->mod_count > 0) {
-      unregister_mods_for_key(state);
-    }
+    unregister_mods_for_key(state);
 
-    // タップキーを送信
-    tap_os_specific_key(state->keycode);
+    // OS別設定からタップキーを取得して送信
+    const os_key_config_t* config = get_os_key_config(state->key_id);
+    if (config) {
+      tap_os_specific_key(config->tap_key);
+    }
     state->code_sent = true;
     state->released_time = record_time;
   }
 
   if (state->repeat_active) {
-    unregister_os_specific_key(state->keycode);
+    // OS別設定からタップキーを取得して解除
+    const os_key_config_t* config = get_os_key_config(state->key_id);
+    if (config) {
+      unregister_os_specific_key(config->tap_key);
+    }
     state->repeat_active = false;
     state->code_sent = false;
   }
@@ -190,7 +199,7 @@ bool handle_henkan_key(keyrecord_t *record) {
     henkan_state.pressed_time = record->event.time;
 
     // 修飾キーを登録
-    register_mods_for_key(&henkan_state);
+    // register_mods_for_key(&henkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&henkan_state);
@@ -217,7 +226,7 @@ bool handle_mhenkan_key(keyrecord_t *record) {
     mhenkan_state.pressed_time = record->event.time;
 
     // 修飾キー関数を使用
-    register_mods_for_key(&mhenkan_state);
+    // register_mods_for_key(&mhenkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&mhenkan_state);
@@ -245,7 +254,7 @@ bool handle_c_bspc_key(keyrecord_t *record) {
     c_bspc_state.is_pressed = true;
     c_bspc_state.pressed_time = record->event.time;
 
-    register_mods_for_key(&c_bspc_state);
+    // register_mods_for_key(&c_bspc_state);
 
     if (timer_elapsed(c_bspc_state.released_time) < TAPPING_TERM) {
       c_bspc_state.rapid_press = true;
@@ -266,7 +275,7 @@ bool handle_cc_bspc_key(keyrecord_t *record) {
     cc_bspc_state.is_pressed = true;
     cc_bspc_state.pressed_time = record->event.time;
 
-    register_mods_for_key(&cc_bspc_state);
+    // register_mods_for_key(&cc_bspc_state);
 
     if (timer_elapsed(cc_bspc_state.released_time) < TAPPING_TERM) {
       cc_bspc_state.rapid_press = true;
@@ -289,7 +298,7 @@ bool handle_c_spc_key(keyrecord_t *record) {
     c_spc_state.is_pressed = true;
     c_spc_state.pressed_time = record->event.time;
 
-    register_mods_for_key(&c_spc_state);
+    // register_mods_for_key(&c_spc_state);
 
     // 重要: rapid_press判定（前回のタップからの継続かどうか）
     if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {
@@ -314,7 +323,7 @@ bool handle_c_ent_key(keyrecord_t *record) {
     c_ent_state.is_pressed = true;
     c_ent_state.pressed_time = record->event.time;
 
-    register_mods_for_key(&c_ent_state);
+    // register_mods_for_key(&c_ent_state);
 
     // 重要: rapid_press判定（前回のタップからの継続かどうか）
     if (timer_elapsed(c_ent_state.released_time) < TAPPING_TERM) {

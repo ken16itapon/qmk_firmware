@@ -11,6 +11,7 @@
 #include "naginata.h"
 
 // カスタムキーコード定義
+
 enum custom_keycodes {
   MHENKAN = NG_SAFE_RANGE,
   HENKAN,

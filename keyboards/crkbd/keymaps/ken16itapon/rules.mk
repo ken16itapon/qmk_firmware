@@ -25,5 +25,5 @@ TAP_DANCE_ENABLE = yes
 CONSOLE_ENABLE = yes
 
 # 分割ファイルを追加
-SRC += key_handlers.c state_manager.c os_specific.c naginata_v15.c twpair_on_jis.c
+SRC += key_handlers.c state_manager.c os_specific.c naginata_v15.c twpair_on_jis.c special_keys_config.c
 
