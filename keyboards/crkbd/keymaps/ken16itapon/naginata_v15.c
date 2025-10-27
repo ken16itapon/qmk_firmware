@@ -272,30 +272,34 @@ const PROGMEM naginata_keymap ngmap[] = {
     {.key = B_COMM | B_Q, .kana = "myu"},
     {.key = B_COMM | B_W, .kana = "byu"},
     {.key = B_COMM | B_E, .kana = "byo"},
-    {.key = B_COMM | B_R, .kana = "pyu"},
+    {.key = B_COMM | B_R, .kana = ""},
     {.key = B_COMM | B_T, .kana = "xyu"},
 
     {.key = B_COMM | B_A, .kana = "myo"},
-    {.key = B_COMM | B_F, .kana = "pyo"},
+    {.key = B_COMM | B_F, .kana = ""},
     {.key = B_COMM | B_G, .kana = "xyo"},
 
     {.key = B_COMM | B_Z, .kana = "mya"},
     {.key = B_COMM | B_X, .kana = ""},
     {.key = B_COMM | B_C, .kana = "bya"},
-    {.key = B_COMM | B_V, .kana = "pya"},
+    {.key = B_COMM | B_V, .kana = "xwa"},
     {.key = B_COMM | B_B, .kana = "xya"},
 
     // 下段薬指シフト
-    {.key = B_DOT | B_Q, .kana = ""},
-    {.key = B_DOT | B_W, .kana = "xi"},
-    {.key = B_DOT | B_E, .kana = "xu"},
+    {.key = B_DOT | B_Q, .kana = "xu"},
+    {.key = B_DOT | B_W, .kana = "pyu"},
+    {.key = B_DOT | B_E, .kana = "pyo"},
     {.key = B_DOT | B_R, .kana = "xe"},
     {.key = B_DOT | B_T, .kana = "xo"},
 
-    {.key = B_DOT | B_Z, .kana = ""},
+    {.key = B_DOT | B_A, .kana = "xi"},
+    {.key = B_DOT | B_F, .kana = "wyi"},
+    {.key = B_DOT | B_G, .kana = "wye"},
+
+    {.key = B_DOT | B_Z, .kana = "xa"},
     {.key = B_DOT | B_X, .kana = ""},
-    {.key = B_DOT | B_C, .kana = "xa"},
-    {.key = B_DOT | B_V, .kana = "xwa"},
+    {.key = B_DOT | B_C, .kana = "pya"},
+    {.key = B_DOT | B_V, .kana = ""},
     {.key = B_DOT | B_B, .kana = ""},
 
     // 記号
