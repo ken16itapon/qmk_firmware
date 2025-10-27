@@ -40,9 +40,9 @@ void handle_key_press_init(uint16_t keycode) {
   if (keycode != MHENKAN && mhenkan_state.is_pressed) {
     mhenkan_state.other_key_pressed = true;
   }
-  if (keycode != C_SPC && c_spc_state.is_pressed) {
-    c_spc_state.other_key_pressed = true;
-  }
+  // if (keycode != C_SPC && c_spc_state.is_pressed) {
+  //   c_spc_state.other_key_pressed = true;
+  // }
   if (keycode != C_BSPC && c_bspc_state.is_pressed) {
     c_bspc_state.other_key_pressed = true;
   }
@@ -119,9 +119,9 @@ void apply_active_mods(void) {
   if(cc_bspc_state.is_pressed) {
     register_mods_for_key(&cc_bspc_state);
   }
-  if (c_spc_state.is_pressed) {
-    register_mods_for_key(&c_spc_state);
-  }
+  // if (c_spc_state.is_pressed) {
+  //   register_mods_for_key(&c_spc_state);
+  // }
    if (c_ent_state.is_pressed) {
     register_mods_for_key(&c_ent_state);
   }
@@ -291,25 +291,25 @@ bool handle_cc_bspc_key(keyrecord_t *record) {
   }
 }
 
-// // C_SPCキーを例にした処理
+// C_SPCキーを例にした処理
 // bool handle_c_spc_key(keyrecord_t *record) {
 //   if (record->event.pressed) {
 //     // キー押下時の共通処理
 //     c_spc_state.is_pressed = true;
 //     c_spc_state.pressed_time = record->event.time;
-
+// 
 //     // register_mods_for_key(&c_spc_state);
-
+// 
 //     // 重要: rapid_press判定（前回のタップからの継続かどうか）
 //     if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {
 //       c_spc_state.rapid_press = true;
 //     } else {
 //       c_spc_state.rapid_press = false;
 //     }
-
+// 
 //     // 他のキーが押されていることを記録
 //     other_key_pressed_except(&c_spc_state);
-
+// 
 //     return false;
 //   } else {
 //     return handle_tap_key(&c_spc_state, record->event.time);

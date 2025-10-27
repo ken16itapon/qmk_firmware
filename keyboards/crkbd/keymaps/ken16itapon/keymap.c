@@ -141,7 +141,7 @@ void matrix_scan_user(void) {
     register_mods_for_key(&mhenkan_state);
   }
   handle_advanced_repeat(&mhenkan_state);
-  handle_advanced_repeat(&c_spc_state);
+  // handle_advanced_repeat(&c_spc_state);
   handle_advanced_repeat(&c_bspc_state);
   if (timer_elapsed(c_ent_state.pressed_time) > TAPPING_TERM &&
       c_ent_state.is_pressed) {
@@ -330,8 +330,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case HENKAN:
       return handle_henkan_key(record);
 
-    case C_SPC:
-      return handle_c_spc_key(record);
+    // case C_SPC:
+    //   return handle_c_spc_key(record);
 
     case C_BSPC:
       return handle_c_bspc_key(record);

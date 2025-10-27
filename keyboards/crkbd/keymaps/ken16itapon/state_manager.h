@@ -29,7 +29,7 @@ extern key_state_t lower_state;
 extern key_state_t raise_state;
 extern key_state_t c_bspc_state;
 extern key_state_t cc_bspc_state;
-extern key_state_t c_spc_state;
+// extern key_state_t c_spc_state;
 extern key_state_t c_ent_state;
 extern key_state_t cs_tab_state;
 extern key_state_t henkan_state;

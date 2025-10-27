@@ -10,7 +10,7 @@ key_state_t lower_state = {0};
 key_state_t raise_state = {0};
 key_state_t c_bspc_state = {0};
 key_state_t cc_bspc_state = {0};
-key_state_t c_spc_state = {0};
+// key_state_t c_spc_state = {0};
 key_state_t c_ent_state = {0};
 key_state_t cs_tab_state = {0};
 key_state_t henkan_state = {0};
@@ -25,7 +25,7 @@ void initialize_key_states(void) {
   mhenkan_state.key_id = SK_MHENKAN;
   c_bspc_state.key_id = SK_C_BSPC;
   cc_bspc_state.key_id = SK_CC_BSPC;
-  c_spc_state.key_id = SK_C_SPC;
+  // c_spc_state.key_id = SK_C_SPC;
   c_ent_state.key_id = SK_C_ENT;
   cs_tab_state.key_id = SK_CS_TAB;
   lower_state.key_id = SK_LOWER;
@@ -83,7 +83,7 @@ void other_key_pressed_except(key_state_t *target) {
   if (target != &raise_state) raise_state.other_key_pressed = true;
   if (target != &c_bspc_state) c_bspc_state.other_key_pressed = true;
   if (target != &cc_bspc_state) cc_bspc_state.other_key_pressed = true;
-  if (target != &c_spc_state) c_spc_state.other_key_pressed = true;
+  // if (target != &c_spc_state) c_spc_state.other_key_pressed = true;
   if (target != &c_ent_state) c_ent_state.other_key_pressed = true;
   if (target != &henkan_state) henkan_state.other_key_pressed = true;
   if (target != &mhenkan_state) mhenkan_state.other_key_pressed = true;
@@ -96,7 +96,7 @@ void set_other_key_pressed(void) {
   raise_state.other_key_pressed = true;
   c_bspc_state.other_key_pressed = true;
   cc_bspc_state.other_key_pressed = true;
-  c_spc_state.other_key_pressed = true;
+  // c_spc_state.other_key_pressed = true;
   c_ent_state.other_key_pressed = true;
   henkan_state.other_key_pressed = true;
   mhenkan_state.other_key_pressed = true;
@@ -109,7 +109,7 @@ void reset_key_pressed(void) {
   raise_state.is_pressed = false;
   c_bspc_state.is_pressed = false;
   cc_bspc_state.is_pressed = false;
-  c_spc_state.is_pressed = false;
+  // c_spc_state.is_pressed = false;
   c_ent_state.is_pressed = false;
   henkan_state.is_pressed = false;
   mhenkan_state.is_pressed = false;
@@ -122,7 +122,7 @@ void reset_pressed_except(key_state_t *target) {
   if (target != &raise_state) raise_state.is_pressed = false;
   if (target != &c_bspc_state) c_bspc_state.is_pressed = false;
   if (target != &cc_bspc_state) cc_bspc_state.is_pressed = false;
-  if (target != &c_spc_state) c_spc_state.is_pressed = false;
+  // if (target != &c_spc_state) c_spc_state.is_pressed = false;
   if (target != &c_ent_state) c_ent_state.is_pressed = false;
   if (target != &henkan_state) henkan_state.is_pressed = false;
   if (target != &mhenkan_state) mhenkan_state.is_pressed = false;
@@ -135,7 +135,7 @@ void reset_rapid_press(void) {
   raise_state.rapid_press = false;
   c_bspc_state.rapid_press = false;
   cc_bspc_state.rapid_press = false;
-  c_spc_state.rapid_press = false;
+  // c_spc_state.rapid_press = false;
   c_ent_state.rapid_press = false;
   henkan_state.rapid_press = false;
   mhenkan_state.rapid_press = false;
@@ -148,7 +148,7 @@ void reset_rapid_press_except(key_state_t *target) {
   if (target != &raise_state) raise_state.rapid_press = false;
   if (target != &c_bspc_state) c_bspc_state.rapid_press = false;
   if (target != &cc_bspc_state) cc_bspc_state.rapid_press = false;
-  if (target != &c_spc_state) c_spc_state.rapid_press = false;
+  // if (target != &c_spc_state) c_spc_state.rapid_press = false;
   if (target != &c_ent_state) c_ent_state.rapid_press = false;
   if (target != &henkan_state) henkan_state.rapid_press = false;
   if (target != &mhenkan_state) mhenkan_state.rapid_press = false;
@@ -161,7 +161,7 @@ void reset_code_sent(void) {
   raise_state.code_sent = false;
   c_bspc_state.code_sent = false;
   cc_bspc_state.code_sent = false;
-  c_spc_state.code_sent = false;
+  // c_spc_state.code_sent = false;
   c_ent_state.code_sent = false;
   henkan_state.code_sent = false;
   mhenkan_state.code_sent = false;
@@ -174,7 +174,7 @@ void reset_code_sent_except(key_state_t *target) {
   if (target != &raise_state) raise_state.code_sent = false;
   if (target != &c_bspc_state) c_bspc_state.code_sent = false;
   if (target != &cc_bspc_state) cc_bspc_state.code_sent = false;
-  if (target != &c_spc_state) c_spc_state.code_sent = false;
+  // if (target != &c_spc_state) c_spc_state.code_sent = false;
   if (target != &c_ent_state) c_ent_state.code_sent = false;
   if (target != &henkan_state) henkan_state.code_sent = false;
   if (target != &mhenkan_state) mhenkan_state.code_sent = false;
@@ -187,7 +187,7 @@ void reset_other_key_pressed(void) {
   raise_state.other_key_pressed = false;
   c_bspc_state.other_key_pressed = false;
   cc_bspc_state.other_key_pressed = false;
-  c_spc_state.other_key_pressed = false;
+  // c_spc_state.other_key_pressed = false;
   c_ent_state.other_key_pressed = false;
   henkan_state.other_key_pressed = false;
   mhenkan_state.other_key_pressed = false;
@@ -197,7 +197,7 @@ void reset_other_key_pressed(void) {
 // いずれかのキーがis_pressedかどうかを返す
 bool get_mods_active(void) {
   return lower_state.is_pressed || raise_state.is_pressed ||
-         c_spc_state.is_pressed || c_bspc_state.is_pressed ||
+         /* c_spc_state.is_pressed || */ c_bspc_state.is_pressed ||
          c_ent_state.is_pressed || cc_bspc_state.is_pressed ||
          henkan_state.is_pressed || mhenkan_state.is_pressed ||
          cs_tab_state.is_pressed;
@@ -224,7 +224,7 @@ void clean_all_mods_key(void) {
   unregister_mods_for_key(&mhenkan_state);
   unregister_mods_for_key(&c_bspc_state);
   unregister_mods_for_key(&cc_bspc_state);
-  unregister_mods_for_key(&c_spc_state);
+  // unregister_mods_for_key(&c_spc_state);
   unregister_mods_for_key(&c_ent_state);
   unregister_mods_for_key(&cs_tab_state);
 }
