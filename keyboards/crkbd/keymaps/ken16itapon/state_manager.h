@@ -15,6 +15,7 @@ typedef struct key_state {
   bool rapid_press;
   bool repeat_active;
   bool other_key_pressed;  // 他のキーが押されたフラグ
+  bool mods_resistered_for;
 
   // キー関連情報（改修版）
   special_key_id_t key_id;           // 特殊キー識別子
@@ -52,3 +53,5 @@ void clean_all_mods_key(void);
 bool is_modifier(uint16_t keycode);
 void register_mods_for_key(key_state_t *key_state);
 void unregister_mods_for_key(key_state_t *key_state);
+void reset_mods_registered_for(void);
+

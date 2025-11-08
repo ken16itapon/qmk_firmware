@@ -132,13 +132,15 @@ void matrix_init_user(void) {
 void matrix_scan_user(void) {
   // 各キーの状態を処理 - 簡略化された呼び出し
   if (timer_elapsed(henkan_state.pressed_time) > TAPPING_TERM &&
-      henkan_state.is_pressed) {
+      henkan_state.is_pressed && !henkan_state.mods_resistered_for) {
     register_mods_for_key(&henkan_state);
+    henkan_state.mods_resistered_for = true;
   }
   handle_advanced_repeat(&henkan_state);
   if (timer_elapsed(mhenkan_state.pressed_time) > TAPPING_TERM &&
-      mhenkan_state.is_pressed) {
+      mhenkan_state.is_pressed && !mhenkan_state.mods_resistered_for) {
     register_mods_for_key(&mhenkan_state);
+    mhenkan_state.mods_resistered_for = true;
   }
   handle_advanced_repeat(&mhenkan_state);
   // handle_advanced_repeat(&c_spc_state);
@@ -158,6 +160,7 @@ void matrix_scan_user(void) {
     reset_rapid_press();
     reset_other_key_pressed();
     reset_code_sent();
+    reset_mods_registered_for();
     clean_all_mods_key();
   }
 }

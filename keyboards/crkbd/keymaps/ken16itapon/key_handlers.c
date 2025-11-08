@@ -90,6 +90,7 @@ bool handle_tap_key(key_state_t *state, uint16_t record_time) {
   // 状態をリセット
   state->is_pressed = false;
   state->released_time = record_time;
+  state->mods_resistered_for = false;
 
   return false;
 }
@@ -199,7 +200,7 @@ bool handle_henkan_key(keyrecord_t *record) {
     henkan_state.pressed_time = record->event.time;
 
     // 修飾キーを登録
-    register_mods_for_key(&henkan_state);
+    // register_mods_for_key(&henkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&henkan_state);
@@ -226,7 +227,7 @@ bool handle_mhenkan_key(keyrecord_t *record) {
     mhenkan_state.pressed_time = record->event.time;
 
     // 修飾キー関数を使用
-    register_mods_for_key(&mhenkan_state);
+    // register_mods_for_key(&mhenkan_state);
 
     // 他のキーが押されていることを記録
     other_key_pressed_except(&mhenkan_state);
@@ -255,6 +256,7 @@ bool handle_c_bspc_key(keyrecord_t *record) {
     c_bspc_state.pressed_time = record->event.time;
 
     register_mods_for_key(&c_bspc_state);
+    c_bspc_state.mods_resistered_for = true;
 
     if (timer_elapsed(c_bspc_state.released_time) < TAPPING_TERM) {
       c_bspc_state.rapid_press = true;
@@ -276,6 +278,7 @@ bool handle_cc_bspc_key(keyrecord_t *record) {
     cc_bspc_state.pressed_time = record->event.time;
 
     register_mods_for_key(&cc_bspc_state);
+    cc_bspc_state.mods_resistered_for = true;
 
     if (timer_elapsed(cc_bspc_state.released_time) < TAPPING_TERM) {
       cc_bspc_state.rapid_press = true;
@@ -297,19 +300,19 @@ bool handle_cc_bspc_key(keyrecord_t *record) {
 //     // キー押下時の共通処理
 //     c_spc_state.is_pressed = true;
 //     c_spc_state.pressed_time = record->event.time;
-// 
+//
 //     // register_mods_for_key(&c_spc_state);
-// 
+//
 //     // 重要: rapid_press判定（前回のタップからの継続かどうか）
 //     if (timer_elapsed(c_spc_state.released_time) < TAPPING_TERM) {
 //       c_spc_state.rapid_press = true;
 //     } else {
 //       c_spc_state.rapid_press = false;
 //     }
-// 
+//
 //     // 他のキーが押されていることを記録
 //     other_key_pressed_except(&c_spc_state);
-// 
+//
 //     return false;
 //   } else {
 //     return handle_tap_key(&c_spc_state, record->event.time);

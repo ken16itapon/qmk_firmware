@@ -30,10 +30,10 @@ void initialize_key_states(void) {
   cs_tab_state.key_id = SK_CS_TAB;
   lower_state.key_id = SK_LOWER;
   raise_state.key_id = SK_RAISE;
-  
+
   // 互換性のため、現在のOS設定を初期値として設定
   const os_key_config_t* config;
-  
+
   // HENKANキー
   config = get_os_key_config(SK_HENKAN);
   if (config) {
@@ -41,7 +41,7 @@ void initialize_key_states(void) {
     memcpy(henkan_state.mod_keys, config->mod_keys, sizeof(uint16_t) * config->mod_count);
     henkan_state.mod_count = config->mod_count;
   }
-  
+
   // MHENKANキー
   config = get_os_key_config(SK_MHENKAN);
   if (config) {
@@ -49,7 +49,7 @@ void initialize_key_states(void) {
     memcpy(mhenkan_state.mod_keys, config->mod_keys, sizeof(uint16_t) * config->mod_count);
     mhenkan_state.mod_count = config->mod_count;
   }
-  
+
   // その他のキーも同様に初期化（簡略化のため省略）
 }
 
@@ -166,6 +166,19 @@ void reset_code_sent(void) {
   henkan_state.code_sent = false;
   mhenkan_state.code_sent = false;
   cs_tab_state.code_sent = false;
+}
+
+// 全てのキーのmods_key_resistered_forフラグをfalseにする
+void reset_mods_registered_for(void) {
+  lower_state.mods_resistered_for = false;
+  raise_state.mods_resistered_for = false;
+  c_bspc_state.mods_resistered_for = false;
+  cc_bspc_state.mods_resistered_for = false;
+  // c_spc_state.mods_resistered_for = false;
+  c_ent_state.mods_resistered_for = false;
+  henkan_state.mods_resistered_for = false;
+  mhenkan_state.mods_resistered_for = false;
+  cs_tab_state.mods_resistered_for = false;
 }
 
 // 指定したキー以外のcode_sentフラグをfalseにする
